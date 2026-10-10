@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.25, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+<title>工事進捗報告書</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eaf2f9;--bar:#fff;--bar-ink:#1b2430;--line:#cfd6de;--accent:#1e88e5;--accent-ink:#fff;--muted:#5d6b7a;--paper:#fff;--ink:#111;--hint:#eef4f9}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181d;--bar:#1c222a;--bar-ink:#e6ebf0;--line:#323b46;--accent:#5aa6d6;--accent-ink:#0b1722;--muted:#93a0ae;--hint:#e3edf6}}
+:root[data-theme="dark"]{--bg:#14181d;--bar:#1c222a;--bar-ink:#e6ebf0;--line:#323b46;--accent:#5aa6d6;--accent-ink:#0b1722;--muted:#93a0ae;--hint:#e3edf6}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--bar-ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;padding:6px 12px;background:linear-gradient(180deg,#ffffff 0%,#e8f3fd 100%);border-bottom:1px solid #c6def4;box-shadow:0 2px 8px rgba(30,110,170,.15);color:#12324d}
+.bar .top{display:flex;align-items:center;gap:8px;flex:0 1 auto;min-width:0;max-width:100%}
+.bar .site{flex:0 1 auto;min-width:0;max-width:300px;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;border:1.5px solid #8ec5f0;border-radius:10px;background:#fff;color:#12324d;font:inherit;text-align:left;cursor:pointer}
+.bar .site:active{background:#eef7ff}
+.bar .site .lb{flex:none;font-size:10px;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:99px;background:#ffb020;color:#3b2600}
+.bar .site .nm{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .site svg{flex:none;width:16px;height:16px;color:#1e88e5}
+.bar .st{flex:0 1 auto;max-width:180px;display:flex;align-items:center;gap:5px;font-size:11px;line-height:1.3;color:#4b6275}
+.bar .st::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:#19c26b;box-shadow:0 0 0 3px rgba(25,194,107,.2)}
+.bar .st:empty{display:none}
+.bar .acts{display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-left:auto}
+.bar .a{flex:0 0 auto;min-height:40px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;border:1.5px solid transparent;border-radius:10px;background:#fff;color:#0b5fa5;font:inherit;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.bar .a svg{flex:none;width:16px;height:16px}
+.bar .a:active{transform:scale(.97)}
+.bar .a:disabled{opacity:.6}
+.bar #clr{background:#fff3d6;border-color:#ffd37a;color:#8a5200}
+.bar #prt{background:#e3f1fd;border-color:#a9d3f5;color:#0b5fa5}
+.bar .a.p{order:3;background:linear-gradient(180deg,#1fd873,#06C755);color:#fff;box-shadow:0 2px 6px rgba(6,199,85,.35)}
+.bar .a.ic{order:4;width:40px;padding:0;background:#fff;border-color:#d3dde7;color:#55697e}
+.bar .a.ic svg{width:18px;height:18px}
+@media (max-width:560px){
+.bar{padding:6px 8px}
+.bar .top{flex:1 1 100%}
+.bar .site{flex:1 1 auto;max-width:none}
+.bar .acts{flex:1 1 100%;margin-left:0}
+.bar .a:not(.ic){flex:1 1 auto;padding:0 8px}
+.bar .a:not(.p):not(.ic) svg{display:none}}
+button.b{font:inherit;flex:1 1 auto;min-height:42px;padding:0 12px;border:0;border-radius:6px;background:#fff;color:#1f3a4d;font-size:14px;font-weight:700;cursor:pointer}
+button.b.n{background:#e8a317;color:#222}
+button.b.p{background:#06C755;color:#fff}
+button.b:disabled{opacity:.6}
+.miss{outline:2px solid #d93025!important;outline-offset:1px;background-color:#fff0f0!important}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+.wrap{padding:14px;overflow:visible;width:max-content;min-width:100%;touch-action:pan-x pan-y pinch-zoom}
+.sheet{width:210mm;max-width:none;margin:0 auto;background:var(--paper);color:var(--ink);padding:10mm;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.frame{border:1.5px solid #000}
+.head{padding:4mm 6mm 2mm;border-bottom:1.5px solid #000;position:relative}
+.head h2{margin:0 0 5mm;font-size:18px;letter-spacing:.9em;font-weight:700}
+.row{display:flex;align-items:baseline;gap:8px;margin:1.5mm 0;font-size:14px}
+.row b{min-width:3.5em}
+.row.right{position:absolute;right:6mm;bottom:2mm;margin:0;font-size:12px}
+.f{font:inherit;color:inherit;border:0;border-bottom:1px dotted #8a97a5;background:transparent;padding:1px 2px;min-width:0}
+.f.title{width:120mm;max-width:100%}
+.f.auth{width:38mm;font-size:12px}
+.f.date{width:38mm}
+.mid{display:flex;border-bottom:1.5px solid #000;min-height:20mm}
+.mid>div{padding:1.5mm 3mm;border-right:1.5px solid #000;font-size:13px;font-weight:700}
+.mid>div:nth-child(1),.mid>div:nth-child(2){width:32mm;text-align:center;flex:none}
+.mid>div:last-child{border-right:0;flex:1}
+.pct{display:block;margin:3mm auto 0;font:inherit;font-size:16px;font-weight:400;border:0;border-bottom:1px dotted #8a97a5;background:transparent;color:inherit;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;width:20mm}
+.note{width:100%;height:13mm;margin-top:1mm;border:0;background:transparent;resize:none;font:inherit;font-size:12px;font-weight:400;color:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr}
+.cell{border-right:1.5px solid #000;min-width:0}
+.cell:nth-child(even){border-right:0}
+.ph{position:relative;aspect-ratio:1.5;border-bottom:1.5px solid #000;overflow:hidden;cursor:pointer;background:var(--hint);display:flex;align-items:center;justify-content:center;text-align:center;color:#5d6b7a;font-size:12px}
+.ph:focus-visible{outline:2px solid #1f5f8b;outline-offset:-2px}
+.ph.on{background:#fff}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:16px;cursor:pointer;line-height:1}
+.ph.drag{outline:3px dashed #1f5f8b;outline-offset:-4px}
+.cap{display:block;width:100%;height:9mm;border:0;border-bottom:1.5px solid #000;padding:0 2mm;font:inherit;font-size:12px;background:transparent;color:inherit}
+.grid .cell:nth-last-child(-n+2) .cap{border-bottom:0}
+.hint{max-width:210mm;margin:10px auto 0;font-size:12px;color:var(--muted)}
+.sheet.cap .f,.sheet.cap .pct,.sheet.cap .note{border-bottom-color:transparent}
+.sheet.cap .x,.sheet.cap .empty{display:none}
+.sheet.cap .ph{background:#fff}
+dialog{width:min(560px,94vw);max-height:86vh;padding:0;border:0;border-radius:12px;background:var(--bar);color:var(--bar-ink);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+dialog[open]{display:flex;flex-direction:column}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:16px}
+.dh button.b,.dadd button.b{flex:none;min-height:40px}
+dialog button.b{background:var(--accent);color:var(--accent-ink)}
+dialog button.b.n{background:#e8a317;color:#222}
+dialog button.b.sm{min-height:36px;padding:0 10px;font-size:13px;background:transparent;color:var(--bar-ink);border:1px solid var(--line);font-weight:600}
+dialog button.b.sm.d{color:#d93025;border-color:#d93025}
+.dadd{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.dadd input{flex:1;min-width:0;min-height:40px;padding:0 10px;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--bar-ink)}
+#sl{list-style:none;margin:0;padding:6px 12px;overflow:auto;flex:1 1 auto;min-height:72px;max-height:60vh;-webkit-overflow-scrolling:touch}
+dialog{overflow:hidden}
+#sl li{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
+#sl li.on .pick{outline:2px solid var(--accent);background:var(--hint);color:#111}
+#sl .pick{flex:1;min-width:0;text-align:left;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+#sl .pick b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sl .pick small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+#sl li.on .pick small{color:#44525f}
+#sl .none{padding:16px 0;color:var(--muted);font-size:13px;border:0}
+.dnote{margin:0;padding:8px 12px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}
+@media print{
+dialog{display:none!important}
+@page{size:A4 portrait;margin:0}
+html,body{background:#fff}
+:root{padding:0}
+.bar,.hint,.x,.empty{display:none!important}
+.wrap{padding:0;overflow:visible}
+.sheet{box-shadow:none;margin:0;width:210mm}
+.f,.pct,.note{border-bottom-color:transparent}
+.ph{background:#fff}
+}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="top">
+    <button class="site" id="sites" type="button" aria-label="現場管理（現場の登録・切替）">
+      <span class="lb">現場</span><span class="nm" id="sn">読み込み中…</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <span class="st" id="st" role="status"></span>
+  </div>
+  <div class="acts">
+    <button class="a p" id="up" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>LINE WORKSへ投稿</button>
+    <button class="a" id="clr" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>新規作成</button>
+    <button class="a" id="prt" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M6 14h12v7H6z"/></svg>PDF印刷</button>
+    <button class="a ic" id="cfg" type="button" aria-label="設定">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+</div>
+<div class="wrap">
+<div class="sheet"><div class="frame">
+  <div class="head">
+    <h2>工事進捗報告書</h2>
+    <div class="row"><b>報告日</b><input class="f date" type="date" id="date"></div>
+    <div class="row"><b>工事名</b><input class="f title" id="title" placeholder="工事名を入力"></div>
+    <div class="row right">作成者<input class="f auth" id="author"></div>
+  </div>
+  <div class="mid">
+    <div>外部工程進捗率<select class="pct" id="ext"></select></div>
+    <div>内部工程進捗率<select class="pct" id="int"></select></div>
+    <div>その他補足事項など<textarea class="note" id="note"></textarea></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <input type="file" id="file" accept="image/*" hidden>
+</div></div>
+<dialog id="dlg" aria-label="現場管理">
+  <div class="dh"><b>現場管理</b><button class="b" id="dx" type="button">閉じる</button></div>
+  <div class="dadd"><input id="nsn" placeholder="新しい現場名（工事名）を入力" autocomplete="off"><button class="b n" id="nsa" type="button">＋ 登録</button></div>
+  <ul id="sl"></ul>
+  <p class="dnote">現場ごとに入力途中の内容（写真含む）を保存します。現場名をタップすると切り替わり、前回の続きから編集できます。データはこの端末のブラウザ内に保存され、別の端末とは共有されません。</p>
+</dialog>
+<p class="hint">写真枠をタップして撮影・選択（Ctrl+Vで貼り付け、ドラッグ＆ドロップも可）。入力内容は現場ごとにこの端末へ自動保存され、ブラウザを閉じても続きから編集できます（「現場管理」で現場を登録・切替）。「LINE WORKSへ投稿」でPDF化して、指定したグループトークへ1タップで投稿します（初回のみ「設定」で中継URL・合言葉・投稿先を入力）。</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const OLDKEY='progress-report-v1',DBN='progress-report-db',N=6;
+const $=id=>document.getElementById(id);
+let S={date:'',title:'',author:'',ext:'',int:'',note:'',caps:Array(N).fill(''),imgs:Array(N).fill('')};
+let cur=0,timer;
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const blank=(title,author)=>({date:today(),title:title||'',author:author||'',ext:'',int:'',note:'',caps:Array(N).fill(''),imgs:Array(N).fill('')});
+function setSt(t){$('st').textContent=t}
+// ---- 永続ストレージ（IndexedDB。使えない場合のみlocalStorageで代替）----
+let idb=null;
+function openDB(){return new Promise(res=>{let done=false;const fin=v=>{if(!done){done=true;res(v)}};
+  setTimeout(()=>fin(null),3000); // iPadのSafari/アプリ内ブラウザでIndexedDBが応答しない場合の保険
+  try{const r=indexedDB.open(DBN,1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+  r.onsuccess=()=>fin(r.result);r.onerror=()=>fin(null);r.onblocked=()=>fin(null)}catch(e){fin(null)}})}
+const kvGet=k=>new Promise(res=>{
+  if(!idb){try{res(JSON.parse(localStorage.getItem('pr:'+k)||'null'))}catch(e){res(null)}return}
+  try{const q=idb.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result==null?null:q.result);q.onerror=()=>res(null)}catch(e){res(null)}});
+const kvSet=(k,v)=>new Promise((res,rej)=>{
+  if(!idb){try{localStorage.setItem('pr:'+k,JSON.stringify(v));res()}catch(e){rej(e)}return}
+  try{const t=idb.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)}catch(e){rej(e)}});
+const kvDel=k=>new Promise(res=>{
+  if(!idb){try{localStorage.removeItem('pr:'+k)}catch(e){}res();return}
+  try{const t=idb.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>res();t.onerror=()=>res();t.onabort=()=>res()}catch(e){res()}});
+// ---- 現場データ ----
+let sites=[],meta={},siteId='',busy=Promise.resolve(),dirty=false,ready=false;
+const newId=()=>'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const curSite=()=>sites.find(s=>s.id===siteId);
+function updateSiteBtn(){const s=curSite();$('sn').textContent=s?s.name:'現場を選択'}
+function save(){dirty=true;setSt('保存中…');clearTimeout(timer);timer=setTimeout(flush,400)}
+function flush(){
+  clearTimeout(timer);if(!dirty||!siteId||!ready)return busy;dirty=false;
+  const id=siteId,s=curSite();
+  if(s){s.updated=Date.now();s.ext=S.ext;s.int=S.int;if(S.title&&S.title.trim())s.name=S.title.trim();updateSiteBtn()}
+  if(S.author&&S.author.trim())meta.author=S.author.trim();
+  // 各setは呼び出し時点の内容を即座に複製するので、直後に現場を切り替えても混ざらない
+  const ps=[kvSet('draft:'+id,S),kvSet('sites',sites),kvSet('meta',meta)];
+  busy=Promise.all(ps).then(()=>{const t=new Date();setSt('自動保存済み '+t.getHours()+':'+String(t.getMinutes()).padStart(2,'0'))},
+    e=>{dirty=true;setSt('保存できません（端末の空き容量を確認してください）')});
+  return busy}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush()});
+addEventListener('pagehide',flush);
+async function openSite(id){
+  await flush();await busy;
+  const s=sites.find(x=>x.id===id);if(!s)return;
+  siteId=id;meta.cur=id;kvSet('meta',meta).catch(()=>{});
+  const d=await kvGet('draft:'+id);
+  S=d?{...blank(s.name,meta.author),...d}:blank(s.name,meta.author);
+  if(!Array.isArray(S.caps))S.caps=Array(N).fill('');if(!Array.isArray(S.imgs))S.imgs=Array(N).fill('');
+  if(!S.date)S.date=today();
+  document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
+  fill();updateSiteBtn();setSt('「'+s.name+'」を開きました');scrollTo(0,0)}
+async function addSite(name){
+  name=(name||'').trim();if(!name)return false;
+  if(sites.some(s=>s.name===name)&&!confirm('同じ名前の現場があります。それでも登録しますか？'))return false;
+  await flush();await busy;
+  const id=newId();sites.push({id,name,updated:Date.now(),ext:'',int:''});
+  await kvSet('draft:'+id,blank(name,meta.author)).catch(()=>{});await kvSet('sites',sites).catch(()=>{});
+  await openSite(id);return true}
+async function renameSite(id){
+  const s=sites.find(x=>x.id===id);if(!s)return;
+  const n=prompt('現場名（工事名）を変更',s.name);if(n===null||!n.trim())return;
+  s.name=n.trim();
+  if(id===siteId){S.title=s.name;$('title').value=s.name;dirty=true;await flush()}
+  else{const d=await kvGet('draft:'+id);if(d){d.title=s.name;await kvSet('draft:'+id,d).catch(()=>{})}await kvSet('sites',sites).catch(()=>{})}
+  updateSiteBtn()}
+async function deleteSite(id){
+  const s=sites.find(x=>x.id===id);if(!s)return;
+  if(!confirm('「'+s.name+'」とその入力内容（写真含む）を削除します。元に戻せません。よろしいですか？'))return;
+  await flush();await busy;
+  sites=sites.filter(x=>x.id!==id);await kvDel('draft:'+id);
+  if(!sites.length){const nid=newId();sites.push({id:nid,name:'新しい現場',updated:Date.now(),ext:'',int:''});await kvSet('draft:'+nid,blank('',meta.author)).catch(()=>{})}
+  await kvSet('sites',sites).catch(()=>{});
+  if(id===siteId){siteId='';await openSite(sites[0].id)}}
+// 現場管理ダイアログ
+const dlg=$('dlg');
+const fmt=t=>{const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')};
+function renderSites(){
+  const ul=$('sl');ul.innerHTML='';
+  if(!sites.length){ul.innerHTML='<li class="none">現場が登録されていません</li>';return}
+  [...sites].sort((a,b)=>(b.updated||0)-(a.updated||0)).forEach(s=>{
+    const li=document.createElement('li');if(s.id===siteId)li.className='on';
+    const p=document.createElement('button');p.type='button';p.className='pick';
+    const nm=document.createElement('b');nm.textContent=s.name;
+    const sm=document.createElement('small');
+    sm.textContent=(s.id===siteId?'作成中 ／ ':'')+'外部'+(s.ext===''||s.ext==null?'－':s.ext+'％')+' 内部'+(s.int===''||s.int==null?'－':s.int+'％')+' ／ 更新 '+fmt(s.updated||Date.now());
+    p.append(nm,sm);
+    p.onclick=async()=>{if(s.id!==siteId)await openSite(s.id);dlg.close()};
+    const r=document.createElement('button');r.type='button';r.className='b sm';r.textContent='名称変更';
+    r.onclick=async()=>{await renameSite(s.id);renderSites()};
+    const d=document.createElement('button');d.type='button';d.className='b sm d';d.textContent='削除';
+    d.onclick=async()=>{await deleteSite(s.id);renderSites()};
+    li.append(p,r,d);ul.appendChild(li)})}
+$('sites').onclick=async()=>{await flush();renderSites();$('nsn').value='';dlg.showModal()};
+$('dx').onclick=()=>dlg.close();
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+async function doAdd(){const v=$('nsn').value;if(await addSite(v)){dlg.close()}}
+$('nsa').onclick=doAdd;
+$('nsn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();doAdd()}});
+// 進捗率
+for(const id of['ext','int']){const o=document.createElement('option');o.value='';o.textContent='選択';$(id).appendChild(o)}
+for(const id of['ext','int'])for(let i=0;i<=100;i+=5){const o=document.createElement('option');o.value=i;o.textContent=i+'％';$(id).appendChild(o)}
+// 写真枠
+const grid=$('grid');
+for(let i=0;i<N;i++){
+  const c=document.createElement('div');c.className='cell';
+  c.innerHTML='<div class="ph" tabindex="0" data-i="'+i+'"></div><input class="cap" data-i="'+i+'" aria-label="写真'+(i+1)+'の説明" placeholder="写真'+(i+1)+'の説明">';
+  grid.appendChild(c);
+}
+function renderPh(i){
+  const ph=grid.querySelector('.ph[data-i="'+i+'"]');ph.innerHTML='';
+  if(S.imgs[i]){ph.classList.add('on');ph.classList.remove('miss');const im=new Image();im.src=S.imgs[i];im.alt='写真'+(i+1);ph.appendChild(im);
+    const x=document.createElement('button');x.className='x';x.type='button';x.textContent='×';x.setAttribute('aria-label','写真を削除');
+    x.onclick=e=>{e.stopPropagation();S.imgs[i]='';renderPh(i);save()};ph.appendChild(x)}
+  else{ph.classList.remove('on');const s=document.createElement('span');s.className='empty';s.textContent='タップして写真を追加';ph.appendChild(s)}
+}
+function fill(){
+  $('date').value=S.date;$('title').value=S.title;$('author').value=S.author;$('ext').value=S.ext;$('int').value=S.int;$('note').value=S.note;
+  grid.querySelectorAll('.cap').forEach(e=>e.value=S.caps[e.dataset.i]||'');
+  for(let i=0;i<N;i++)renderPh(i);
+}
+function toDataURL(file){return new Promise((res,rej)=>{
+  const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const m=1280,k=Math.min(1,m/Math.max(im.naturalWidth,im.naturalHeight));
+    const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.8))};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej()};im.src=u})}
+async function setImg(i,f){if(!f||!f.type.startsWith('image/'))return;
+  try{S.imgs[i]=await toDataURL(f);renderPh(i);save()}catch(e){setSt('画像を読み込めませんでした')}}
+grid.addEventListener('click',e=>{const p=e.target.closest('.ph');if(p){cur=+p.dataset.i;$('file').click()}});
+grid.addEventListener('keydown',e=>{const p=e.target.closest('.ph');if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();cur=+p.dataset.i;$('file').click()}});
+$('file').addEventListener('change',e=>{setImg(cur,e.target.files[0]);e.target.value=''});
+grid.addEventListener('dragover',e=>{const p=e.target.closest('.ph');if(p){e.preventDefault();p.classList.add('drag')}});
+grid.addEventListener('dragleave',e=>{const p=e.target.closest('.ph');if(p)p.classList.remove('drag')});
+grid.addEventListener('drop',e=>{const p=e.target.closest('.ph');if(!p)return;e.preventDefault();p.classList.remove('drag');setImg(+p.dataset.i,e.dataTransfer.files[0])});
+document.addEventListener('paste',e=>{
+  const f=[...(e.clipboardData?.files||[])].find(x=>x.type.startsWith('image/'));if(!f)return;
+  const a=document.activeElement,p=a&&a.closest&&a.closest('.ph');
+  let i=p?+p.dataset.i:S.imgs.findIndex(x=>!x);if(i<0)i=0;setImg(i,f)});
+// 入力
+for(const[id,k]of[['date','date'],['title','title'],['author','author'],['ext','ext'],['int','int'],['note','note']])
+  $(id).addEventListener('input',e=>{S[k]=e.target.value;save()});
+grid.addEventListener('input',e=>{if(e.target.classList.contains('cap')){S.caps[+e.target.dataset.i]=e.target.value;save()}});
+// 操作
+$('prt').onclick=()=>{
+  const d=(S.date||'').replace(/-/g,'');const old=document.title;
+  document.title='工事進捗報告書_'+(S.title||'無題')+'_'+d;window.print();document.title=old};
+$('clr').onclick=()=>{const s=curSite();if(!confirm('この現場の入力内容（写真含む）を消して、新しい報告書を作成しますか？\n（現場の登録は残ります）'))return;
+  S=blank(s?s.name:'',S.author);fill();save()};
+// LINE WORKS投稿
+const CK='progress-report-lw-cfg';let CFG={relay:'',key:'',channel:''};
+try{CFG={...CFG,...JSON.parse(localStorage.getItem(CK)||'{}')}}catch(e){}
+const enc64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec64=t=>JSON.parse(decodeURIComponent(escape(atob(t))));
+function saveCfg(){try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(e){}}
+// 配布用の設定リンク（#setup=…）から設定を取り込む
+(()=>{const m=location.hash.match(/^#setup=(.+)$/);if(!m)return;
+  try{const o=dec64(m[1]);CFG={...CFG,relay:o.r||'',key:o.k||'',channel:o.g||''};saveCfg();
+    history.replaceState(null,'',location.pathname+location.search);setSt('設定リンクから設定を読み込みました')}catch(e){}})();
+$('cfg').onclick=()=>{
+  const r=prompt('① 中継サーバー(Cloudflare Worker)のURL',CFG.relay);if(r===null)return;
+  const k=prompt('② 合言葉（中継サーバーに設定した APP_KEY）',CFG.key);if(k===null)return;
+  const g=prompt('③ 投稿先グループの channelId（空欄＝中継サーバー側の既定グループ）',CFG.channel);if(g===null)return;
+  CFG={relay:r.trim(),key:k.trim(),channel:g.trim()};saveCfg();setSt('設定を保存しました');
+  if(CFG.relay)prompt('他の人に配るときは、この設定済みURLをコピーして送ってください（開くだけで同じ設定になります）',location.origin+location.pathname+'#setup='+enc64({r:CFG.relay,k:CFG.key,g:CFG.channel}))};
+const pc=v=>(v===''||v==null)?'':v+'％';
+async function makePdf(){
+  const K=8,W=210*K,H=297*K,m=v=>v*K;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const FF='"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans CJK JP",sans-serif';
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#000';x.strokeStyle='#000';x.lineWidth=m(.4);
+  const L=(a,b,c2,d)=>{x.beginPath();x.moveTo(m(a),m(b));x.lineTo(m(c2),m(d));x.stroke()};
+  const T=(t,px,py,sz,o={})=>{x.font=(o.b?'700 ':'400 ')+m(sz)+'px '+FF;x.textAlign=o.a||'left';x.textBaseline='alphabetic';
+    if(o.w)x.fillText(t,m(px),m(py),m(o.w));else x.fillText(t,m(px),m(py))};
+  const wrap=(t,w,sz)=>{x.font='400 '+m(sz)+'px '+FF;const out=[];
+    for(const para of String(t||'').split('\n')){let line='';
+      for(const ch of para){if(x.measureText(line+ch).width>m(w)&&line){out.push(line);line=ch}else line+=ch}out.push(line)}return out};
+  const load=src=>new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src});
+  const ims=await Promise.all(S.imgs.map(load));
+  const gy=72,pw=95,ph=pw/1.5,cp=9,rh=ph+cp,bottom=gy+3*rh;
+  // 見出し
+  let tx=16;for(const ch of '工事進捗報告書'){T(ch,tx,21,5,{b:1});tx+=9}
+  const d=(S.date||'').split('-');
+  T('報告日',16,31,3.7,{b:1});T(d.length==3?d[0]+'年'+(+d[1])+'月'+(+d[2])+'日':'',34,31,3.7);
+  T('工事名',16,39,3.7,{b:1});T(S.title||'',34,39,3.7,{w:120});
+  T('作成者',148,46,3.2);T(S.author||'',160,46,3.2,{w:38});
+  // 進捗・補足
+  T('外部工程進捗率',26,56,3.1,{b:1,a:'center'});T(pc(S.ext),26,66,4.2,{a:'center'});
+  T('内部工程進捗率',58,56,3.1,{b:1,a:'center'});T(pc(S.int),58,66,4.2,{a:'center'});
+  T('その他補足事項など',77,55,3.1,{b:1});
+  wrap(S.note,118,3.1).slice(0,4).forEach((t,i)=>T(t,77,60.5+i*3.9,3.1));
+  // 写真
+  for(let i=0;i<6;i++){const col=i%2,row=i>>1,gx=10+col*pw,y0=gy+row*rh,im=ims[i];
+    if(im){const sc=Math.max(m(pw)/im.width,m(ph)/im.height),sw=m(pw)/sc,sh=m(ph)/sc;
+      x.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,m(gx),m(y0),m(pw),m(ph))}
+    L(gx,y0+ph,gx+pw,y0+ph);if(row<2)L(gx,y0+rh,gx+pw,y0+rh);
+    T(S.caps[i]||'',gx+2,y0+ph+cp*.66,3.2,{w:pw-4})}
+  // 枠線
+  x.strokeRect(m(10),m(10),m(190),m(bottom-10));
+  L(10,50,200,50);L(10,72,200,72);L(42,50,42,72);L(74,50,74,72);L(105,gy,105,bottom);
+  const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'});
+  pdf.addImage(c.toDataURL('image/jpeg',.88),'JPEG',0,0,210,297);
+  return pdf.output('blob')}
+// 投稿前の未入力チェック
+const REQ_ALL_PHOTOS=false; // true: 写真6枚すべて必須 / false: 写真1枚以上＋貼った写真には説明が必須
+document.addEventListener('input',e=>{if(e.target.classList)e.target.classList.remove('miss')});
+function validate(){
+  const m=[],t=v=>String(v==null?'':v).trim();
+  const add=(label,el)=>m.push({label,el});
+  if(!t(S.date))add('報告日',$('date'));
+  if(!t(S.title))add('工事名',$('title'));
+  if(!t(S.author))add('作成者',$('author'));
+  if(S.ext==='')add('外部工程進捗率',$('ext'));
+  if(S.int==='')add('内部工程進捗率',$('int'));
+  if(!t(S.note))add('その他補足事項など',$('note'));
+  const ph=i=>grid.querySelector('.ph[data-i="'+i+'"]'),cp=i=>grid.querySelector('.cap[data-i="'+i+'"]');
+  const has=S.imgs.filter(Boolean).length;
+  if(!REQ_ALL_PHOTOS&&has===0)add('写真（1枚以上）',ph(0));
+  for(let i=0;i<N;i++){
+    const img=!!S.imgs[i],cap=!!t(S.caps[i]);
+    if(REQ_ALL_PHOTOS){if(!img)add('写真'+(i+1),ph(i));if(!cap)add('写真'+(i+1)+'の説明',cp(i))}
+    else{if(img&&!cap)add('写真'+(i+1)+'の説明',cp(i));if(!img&&cap)add('写真'+(i+1),ph(i))}
+  }
+  return m}
+function showMiss(m){
+  document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
+  m.forEach(x=>x.el&&x.el.classList.add('miss'));
+  const f=m[0]&&m[0].el;if(f){f.scrollIntoView({behavior:'smooth',block:'center'});if(f.focus&&f.tagName!=='DIV')try{f.focus({preventScroll:true})}catch(e){}}
+  const msg='未入力の項目があるため投稿できません。\n\n'+m.map(x=>'・'+x.label).join('\n');
+  setSt('未入力: '+m.map(x=>x.label).join('、'));alert(msg)}
+function reportText(){
+  return(S.title||'')+'工事進捗報告書を提出します。\n外部'+(S.ext||0)+'％内部'+(S.int||0)+'％'}
+$('up').onclick=async()=>{
+  const miss=validate();if(miss.length){showMiss(miss);return}
+  const b=$('up');b.disabled=true;
+  try{
+    setSt('PDF作成中…');const blob=await makePdf();
+    const nm=((S.title||'無題')+'_工事進捗報告書_'+(S.date||'').replace(/-/g,'')+'.pdf').replace(/[\\/:*?"<>|]/g,'_');
+    // 中継サーバー未設定: 端末の共有シート（LINE WORKSアプリを選択）で代替
+    if(!CFG.relay){
+      const f=new File([blob],nm,{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){
+        try{await navigator.share({files:[f],text:reportText()});setSt('共有しました（中継URL未設定のため共有シート経由）')}
+        catch(e){if(e.name!=='AbortError')throw e;setSt('共有をキャンセルしました')}
+      }else{
+        const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=nm;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
+        setSt('中継URL未設定のためPDFをダウンロードしました。「設定」で中継URLを入力してください')}
+      return}
+    setSt('LINE WORKSへ投稿中…');
+    const fd=new FormData();fd.append('file',blob,nm);fd.append('text',reportText());if(CFG.channel)fd.append('channelId',CFG.channel);
+    const r=await fetch(CFG.relay,{method:'POST',headers:{'X-App-Key':CFG.key},body:fd});
+    let j={};try{j=await r.json()}catch(e){}
+    if(!r.ok||!j.ok)throw new Error(j.error||('投稿失敗('+r.status+')'));
+    const t=new Date();setSt('投稿しました '+t.getHours()+':'+String(t.getMinutes()).padStart(2,'0')+' / '+nm);
+  }catch(e){const m='エラー: '+(e.message||e);setSt(m);alert(m)}
+  finally{b.disabled=false}};
+// 起動：保存済みの現場を読み込み、前回開いていた現場の続きから再開
+(async()=>{
+  idb=await openDB();
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){} // iPadのSafariに自動削除されにくくする
+  meta=(await kvGet('meta'))||{};sites=(await kvGet('sites'))||[];
+  if(!sites.length){
+    // 旧バージョン（localStorage）の下書きがあれば最初の現場として引き継ぐ
+    let old=null;try{old=JSON.parse(localStorage.getItem(OLDKEY)||'null')}catch(e){}
+    const id=newId(),nm=(old&&old.title&&old.title.trim())||'新しい現場';
+    sites=[{id,name:nm,updated:Date.now(),ext:old?old.ext||'':'',int:old?old.int||'':''}];
+    if(old&&old.author)meta.author=old.author;meta.cur=id;
+    await kvSet('draft:'+id,old?{...blank(nm,meta.author),...old}:blank('',meta.author)).catch(()=>{});
+    await kvSet('sites',sites).catch(()=>{});await kvSet('meta',meta).catch(()=>{});
+  }
+  ready=true;
+  await openSite(sites.some(s=>s.id===meta.cur)?meta.cur:sites[0].id);
+  setSt('前回の続きから開きました：'+(curSite()||{}).name);
+})();
+</script>
+</body>
+</html>
