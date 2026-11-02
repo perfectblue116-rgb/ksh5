@@ -402,16 +402,9 @@ $('prt').onclick=async()=>{
   document.title=baseName();
   const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(mobile){
-    // スマホ・タブレット：Web印刷だとURL・日付・ページ数のフッターが付き2ページに割れるため、
-    // PDF(1ページ)を作って共有シートから「プリント」を選ぶ方式にする（フッターなし）
+    // スマホ・タブレット：PDFと同じ1枚の画像を用紙全面に固定配置して印刷（1ページに収める）
     try{
-      setSt('印刷用PDF作成中…');const blob=await makePdf();
-      const f=new File([blob],pdfName(),{type:'application/pdf'});
-      if(navigator.canShare&&navigator.canShare({files:[f]})){
-        try{await navigator.share({files:[f]});setSt('');document.title=old;return}
-        catch(e){if(e.name==='AbortError'){setSt('');document.title=old;return}}
-      }
-      // 共有できない場合：1枚画像を用紙全面で印刷
+      setSt('印刷用データ作成中…');await makePdf();
       const box=$('pimg');box.innerHTML='';const im=new Image();im.src=window.__pageImg;
       try{await im.decode()}catch(e){}
       box.appendChild(im);document.body.classList.add('print-img');document.documentElement.classList.add('print-img');setSt('');
