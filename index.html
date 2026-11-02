@@ -155,15 +155,13 @@ html,body{background:#fff}
   </div>
   <div class="acts">
     <button class="a p" id="up" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>LINE WORKSへ投稿</button>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>PDF出力（LINE WORKS用）</button>
     <button class="a" id="bulk" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>画像一括挿入</button>
     <button class="a" id="clr" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>新規作成</button>
     <button class="a" id="prt" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M6 14h12v7H6z"/></svg>PDF印刷</button>
-    <button class="a ic" id="cfg" type="button" aria-label="設定">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button class="a ic" id="dm" type="button" aria-label="データ管理（JSON出力・読込／キャッシュ整理）">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></button>
   </div>
@@ -254,7 +252,7 @@ let sites=[],meta={},siteId='',busy=Promise.resolve(),dirty=false,ready=false;
 const newId=()=>'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const curSite=()=>sites.find(s=>s.id===siteId);
 function updateSiteBtn(){const s=curSite();$('sn').textContent=s?s.name:'現場を選択'}
-function save(){dirty=true;setSt('保存中…');clearTimeout(timer);timer=setTimeout(flush,400)}
+function save(){if(typeof clearPend==='function')clearPend();dirty=true;setSt('保存中…');clearTimeout(timer);timer=setTimeout(flush,400)}
 function flush(){
   clearTimeout(timer);if(!dirty||!siteId||!ready)return busy;dirty=false;
   const id=siteId,s=curSite();
@@ -391,25 +389,9 @@ grid.addEventListener('input',e=>{if(e.target.classList.contains('cap')){S.caps[
 // 操作
 $('prt').onclick=()=>{
   const d=(S.date||'').replace(/-/g,'');const old=document.title;
-  document.title='工事進捗報告書_'+(S.title||'無題')+'_'+d;window.print();document.title=old};
+  document.title=siteName()+'_工事進捗報告書_'+d;window.print();document.title=old};
 $('clr').onclick=()=>{const s=curSite();if(!confirm('この現場の入力内容（写真含む）を消して、新しい報告書を作成しますか？\n（現場の登録は残ります）'))return;
   S=blank(s?s.name:'',S.author);fill();save()};
-// LINE WORKS投稿
-const CK='progress-report-lw-cfg';let CFG={relay:'',key:'',channel:''};
-try{CFG={...CFG,...JSON.parse(localStorage.getItem(CK)||'{}')}}catch(e){}
-const enc64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
-const dec64=t=>JSON.parse(decodeURIComponent(escape(atob(t))));
-function saveCfg(){try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(e){}}
-// 配布用の設定リンク（#setup=…）から設定を取り込む
-(()=>{const m=location.hash.match(/^#setup=(.+)$/);if(!m)return;
-  try{const o=dec64(m[1]);CFG={...CFG,relay:o.r||'',key:o.k||'',channel:o.g||''};saveCfg();
-    history.replaceState(null,'',location.pathname+location.search);setSt('設定リンクから設定を読み込みました')}catch(e){}})();
-$('cfg').onclick=()=>{
-  const r=prompt('① 中継サーバー(Cloudflare Worker)のURL',CFG.relay);if(r===null)return;
-  const k=prompt('② 合言葉（中継サーバーに設定した APP_KEY）',CFG.key);if(k===null)return;
-  const g=prompt('③ 投稿先グループの channelId（空欄＝中継サーバー側の既定グループ）',CFG.channel);if(g===null)return;
-  CFG={relay:r.trim(),key:k.trim(),channel:g.trim()};saveCfg();setSt('設定を保存しました');
-  if(CFG.relay)prompt('他の人に配るときは、この設定済みURLをコピーして送ってください（開くだけで同じ設定になります）',location.origin+location.pathname+'#setup='+enc64({r:CFG.relay,k:CFG.key,g:CFG.channel}))};
 const pc=v=>(v===''||v==null)?'':v+'％';
 async function makePdf(){
   const K=8,W=210*K,H=297*K,m=v=>v*K;
@@ -477,28 +459,33 @@ function showMiss(m){
   setSt('未入力: '+m.map(x=>x.label).join('、'));alert(msg)}
 function reportText(){
   return(S.title||'')+'工事進捗報告書を提出します。\n外部'+(S.ext||0)+'％内部'+(S.int||0)+'％'}
+const siteName=()=>((curSite()&&curSite().name)||S.title||'無題').trim()||'無題';
+const pdfName=()=>(siteName()+'_工事進捗報告書_'+(S.date||'').replace(/-/g,'')+'.pdf').replace(/[\\/:*?"<>|]/g,'_');
+let pend=null;const upLabel=()=>$('up').lastChild;
+function clearPend(){if(pend){pend=null;upLabel().textContent='PDF出力（LINE WORKS用）'}}
+async function doShare(f){
+  try{await navigator.share({files:[f],text:reportText()});setSt('共有しました / '+f.name);clearPend();return true}
+  catch(e){
+    if(e.name==='AbortError'){setSt('共有をキャンセルしました');return true}
+    if(e.name==='NotAllowedError'){ // iPhone等：PDF作成に時間がかかると共有が拒否される → もう一度タップで即共有
+      pend=f;upLabel().textContent='共有画面を開く（LINE WORKSを選択）';
+      setSt('PDFができました。もう一度ボタンを押すと共有画面が開きます');return true}
+    throw e}}
 $('up').onclick=async()=>{
+  if(pend){const f=pend;await doShare(f);return}
   const miss=validate();if(miss.length){showMiss(miss);return}
   const b=$('up');b.disabled=true;
   try{
     setSt('PDF作成中…');const blob=await makePdf();
-    const nm=((S.title||'無題')+'_工事進捗報告書_'+(S.date||'').replace(/-/g,'')+'.pdf').replace(/[\\/:*?"<>|]/g,'_');
-    // 中継サーバー未設定: 端末の共有シート（LINE WORKSアプリを選択）で代替
-    if(!CFG.relay){
-      const f=new File([blob],nm,{type:'application/pdf'});
-      if(navigator.canShare&&navigator.canShare({files:[f]})){
-        try{await navigator.share({files:[f],text:reportText()});setSt('共有しました（中継URL未設定のため共有シート経由）')}
-        catch(e){if(e.name!=='AbortError')throw e;setSt('共有をキャンセルしました')}
-      }else{
-        const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=nm;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
-        setSt('中継URL未設定のためPDFをダウンロードしました。「設定」で中継URLを入力してください')}
-      return}
-    setSt('LINE WORKSへ投稿中…');
-    const fd=new FormData();fd.append('file',blob,nm);fd.append('text',reportText());if(CFG.channel)fd.append('channelId',CFG.channel);
-    const r=await fetch(CFG.relay,{method:'POST',headers:{'X-App-Key':CFG.key},body:fd});
-    let j={};try{j=await r.json()}catch(e){}
-    if(!r.ok||!j.ok)throw new Error(j.error||('投稿失敗('+r.status+')'));
-    const t=new Date();setSt('投稿しました '+t.getHours()+':'+String(t.getMinutes()).padStart(2,'0')+' / '+nm);
+    const nm=pdfName();
+    const f=new File([blob],nm,{type:'application/pdf'});
+    const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    // スマホ・タブレット：共有画面からLINE WORKSアプリを選んで投稿（PCの共有画面にはLINE WORKSが出ないためPDF保存）
+    if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){
+      await doShare(f)
+    }else{
+      const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=nm;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
+      setSt('PDFを保存しました。LINE WORKSのトークにドラッグ＆ドロップで添付してください / '+nm)}
   }catch(e){const m='エラー: '+(e.message||e);setSt(m);alert(m)}
   finally{b.disabled=false}};
 // ---- データ管理（容量確認・キャッシュ整理・JSON出力/読込）----
