@@ -137,8 +137,8 @@ dialog{display:none!important}
 body.print-img .wrap,body.print-img .bar,body.print-img .hint{display:none!important}
 body.print-img #pimg{display:block}
 html.print-img,body.print-img{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
-#pimg{margin:0;padding:0;position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden}
-#pimg img{display:block;width:100%;height:100%;object-fit:contain;margin:0;page-break-inside:avoid;break-inside:avoid}
+#pimg{margin:0;padding:0;height:262mm;overflow:hidden;page-break-after:avoid;break-after:avoid}
+#pimg img{display:block;margin:0 auto;height:262mm;width:auto;max-width:100%;page-break-inside:avoid;break-inside:avoid}
 @page{size:A4 portrait;margin:0}
 html,body{background:#fff}
 :root{padding:0}
