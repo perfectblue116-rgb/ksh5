@@ -403,18 +403,21 @@ $('prt').onclick=async()=>{
   document.title=baseName();
   const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(mobile){
-    // スマホ・タブレット：PDFと同じ1枚の画像を用紙全面に固定配置して印刷（1ページに収める）
+    // スマホ・タブレット：Web印刷はSafariがURL・日付・ページ表記を付け、2ページに割れる。
+    // そのため1ページのPDFを新しいタブで開く → 共有ボタン →「プリント」で、表記なし・1ページで印刷できる
+    const w=window.open('','_blank'); // ユーザー操作中に先に開く（非同期後だとブロックされるため）
     try{
-      setSt('印刷用データ作成中…');await makePdf();
-      // 余白部分を切り落として枠線ぎりぎりの1枚画像にする（用紙内で大きく印刷するため）
-      const full=new Image();full.src=window.__pageImg;try{await full.decode()}catch(e){}
-      const K=8,cw=200*K,ch=287*K,cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
-      const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,cw,ch);g.drawImage(full,5*K,5*K,cw,ch,0,0,cw,ch);
-      const box=$('pimg');box.innerHTML='';const im=new Image();im.src=cv.toDataURL('image/jpeg',.92);
-      try{await im.decode()}catch(e){}
-      box.appendChild(im);document.body.classList.add('print-img');document.documentElement.classList.add('print-img');setSt('');
-      window.print();
-    }catch(e){setSt('印刷の準備に失敗しました');document.title=old;return}
+      setSt('印刷用PDF作成中…');const blob=await makePdf();
+      const u=URL.createObjectURL(blob);
+      if(w){w.location.href=u;setSt('PDFを開きました。共有ボタン →「プリント」で印刷できます（LINE WORKSへの共有も可）');document.title=old;return}
+      // タブを開けない場合：共有シート
+      const f=new File([blob],pdfName(),{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){
+        try{await navigator.share({files:[f]});setSt('');document.title=old;return}
+        catch(e){if(e.name==='AbortError'){setSt('');document.title=old;return}}
+      }
+      location.href=u;document.title=old;return
+    }catch(e){if(w)try{w.close()}catch(_){}setSt('印刷の準備に失敗しました');document.title=old;return}
     const done=()=>{document.body.classList.remove('print-img');document.documentElement.classList.remove('print-img');$('pimg').innerHTML='';document.title=old;removeEventListener('afterprint',done)};
     addEventListener('afterprint',done);setTimeout(done,120000);
   }else{window.print();document.title=old}};
