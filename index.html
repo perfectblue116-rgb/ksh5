@@ -134,17 +134,17 @@ dialog{overflow:hidden}
 #pimg{display:none}
 @media print{
 dialog{display:none!important}
-body.print-img .wrap,body.print-img .bar{display:none!important}
+body.print-img .wrap,body.print-img .bar,body.print-img .hint{display:none!important}
 body.print-img #pimg{display:block}
-body.print-img,body.print-img html{height:auto!important;overflow:visible!important}
-#pimg img{display:block;margin:0 auto;width:88%;height:auto;page-break-inside:avoid}
+html.print-img,body.print-img{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
+#pimg{margin:0;padding:0}
+#pimg img{display:block;margin:0 auto;height:240mm;width:auto;max-width:100%;page-break-inside:avoid;break-inside:avoid}
 @page{size:A4 portrait;margin:0}
-html,body{height:296mm;overflow:hidden}
 html,body{background:#fff}
 :root{padding:0}
 .bar,.hint,.x,.empty{display:none!important}
 .wrap{padding:0;overflow:visible}
-.sheet{box-shadow:none;margin:0;width:210mm;height:296mm;overflow:hidden;padding:6mm 10mm;page-break-after:avoid;break-after:avoid;page-break-inside:avoid}
+.sheet{box-shadow:none;margin:0;width:210mm;height:290mm;overflow:hidden;padding:6mm 10mm;page-break-after:avoid;break-after:avoid;page-break-inside:avoid}
 .wrap{width:210mm;min-width:0}
 .f,.pct,.note{border-bottom-color:transparent}
 .ph{background:#fff}
@@ -399,7 +399,7 @@ grid.addEventListener('input',e=>{if(e.target.classList.contains('cap')){S.caps[
 // 操作
 $('prt').onclick=async()=>{
   const d=(S.date||'').replace(/-/g,'');const old=document.title;
-  document.title=siteName()+'_工事進捗報告書_'+d;
+  document.title=baseName();
   const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(mobile){
     // スマホ・タブレット：PDFと同じ1枚の画像をA4に収めて印刷（画面レイアウトの印刷だと2ページに割れるため）
@@ -407,10 +407,10 @@ $('prt').onclick=async()=>{
       setSt('印刷用データ作成中…');await makePdf();
       const box=$('pimg');box.innerHTML='';const im=new Image();im.src=window.__pageImg;
       try{await im.decode()}catch(e){}
-      box.appendChild(im);document.body.classList.add('print-img');setSt('');
+      box.appendChild(im);document.body.classList.add('print-img');document.documentElement.classList.add('print-img');setSt('');
       window.print();
     }catch(e){setSt('印刷の準備に失敗しました');document.title=old;return}
-    const done=()=>{document.body.classList.remove('print-img');$('pimg').innerHTML='';document.title=old;removeEventListener('afterprint',done)};
+    const done=()=>{document.body.classList.remove('print-img');document.documentElement.classList.remove('print-img');$('pimg').innerHTML='';document.title=old;removeEventListener('afterprint',done)};
     addEventListener('afterprint',done);setTimeout(done,120000);
   }else{window.print();document.title=old}};
 $('clr').onclick=()=>{const s=curSite();if(!confirm('この現場の入力内容（写真含む）を消して、新しい報告書を作成しますか？\n（現場の登録は残ります）'))return;
@@ -483,7 +483,8 @@ function showMiss(m){
 function reportText(){
   return(S.title||'')+'工事進捗報告書を提出します。\n外部'+(S.ext||0)+'％内部'+(S.int||0)+'％'}
 const siteName=()=>((S.title||'').trim()||(curSite()&&curSite().name)||'無題').trim()||'無題';
-const pdfName=()=>(siteName()+'_工事進捗報告書_'+(S.date||'').replace(/-/g,'')+'.pdf').replace(/[\\/:*?"<>|]/g,'_');
+const baseName=()=>(siteName()+' 外部'+(S.ext||0)+'％ 内部'+(S.int||0)+'％ 工事進捗報告書').replace(/[\\/:*?"<>|]/g,'_');
+const pdfName=()=>baseName()+'.pdf';
 let pend=null;const upLabel=()=>$('up').lastChild;
 function clearPend(){if(pend){pend=null;upLabel().textContent='PDF出力（LINE WORKS用）'}}
 async function doShare(f){
