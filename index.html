@@ -137,14 +137,14 @@ dialog{display:none!important}
 body.print-img .wrap,body.print-img .bar,body.print-img .hint{display:none!important}
 body.print-img #pimg{display:block}
 html.print-img,body.print-img{height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
-#pimg{margin:0;padding:0}
-#pimg img{display:block;margin:0 auto;height:240mm;width:auto;max-width:100%;page-break-inside:avoid;break-inside:avoid}
+#pimg{margin:0;padding:0;position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden}
+#pimg img{display:block;width:100%;height:100%;object-fit:contain;margin:0;page-break-inside:avoid;break-inside:avoid}
 @page{size:A4 portrait;margin:0}
 html,body{background:#fff}
 :root{padding:0}
 .bar,.hint,.x,.empty{display:none!important}
 .wrap{padding:0;overflow:visible}
-.sheet{box-shadow:none;margin:0;width:210mm;height:290mm;overflow:hidden;padding:6mm 10mm;page-break-after:avoid;break-after:avoid;page-break-inside:avoid}
+.sheet{box-shadow:none;margin:0;width:210mm;height:290mm;overflow:hidden;padding:4mm 6mm;page-break-after:avoid;break-after:avoid;page-break-inside:avoid}
 .wrap{width:210mm;min-width:0}
 .f,.pct,.note{border-bottom-color:transparent}
 .ph{background:#fff}
@@ -402,9 +402,16 @@ $('prt').onclick=async()=>{
   document.title=baseName();
   const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(mobile){
-    // スマホ・タブレット：PDFと同じ1枚の画像をA4に収めて印刷（画面レイアウトの印刷だと2ページに割れるため）
+    // スマホ・タブレット：Web印刷だとURL・日付・ページ数のフッターが付き2ページに割れるため、
+    // PDF(1ページ)を作って共有シートから「プリント」を選ぶ方式にする（フッターなし）
     try{
-      setSt('印刷用データ作成中…');await makePdf();
+      setSt('印刷用PDF作成中…');const blob=await makePdf();
+      const f=new File([blob],pdfName(),{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){
+        try{await navigator.share({files:[f]});setSt('');document.title=old;return}
+        catch(e){if(e.name==='AbortError'){setSt('');document.title=old;return}}
+      }
+      // 共有できない場合：1枚画像を用紙全面で印刷
       const box=$('pimg');box.innerHTML='';const im=new Image();im.src=window.__pageImg;
       try{await im.decode()}catch(e){}
       box.appendChild(im);document.body.classList.add('print-img');document.documentElement.classList.add('print-img');setSt('');
@@ -429,27 +436,27 @@ async function makePdf(){
       for(const ch of para){if(x.measureText(line+ch).width>m(w)&&line){out.push(line);line=ch}else line+=ch}out.push(line)}return out};
   const load=src=>new Promise(r=>{if(!src)return r(null);const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src});
   const ims=await Promise.all(S.imgs.map(load));
-  const gy=72,pw=95,ph=pw/1.5,cp=9,rh=ph+cp,bottom=gy+3*rh;
+  const M=6,gy=66,pw=99,ph=pw/1.5,cp=9,rh=ph+cp,bottom=gy+3*rh;
   // 見出し
-  let tx=16;for(const ch of '工事進捗報告書'){T(ch,tx,21,5,{b:1});tx+=9}
+  let tx=12;for(const ch of '工事進捗報告書'){T(ch,tx,17,5,{b:1});tx+=9}
   const d=(S.date||'').split('-');
-  T('報告日',16,31,3.7,{b:1});T(d.length==3?d[0]+'年'+(+d[1])+'月'+(+d[2])+'日':'',34,31,3.7);
-  T('工事名',16,39,3.7,{b:1});T(S.title||'',34,39,3.7,{w:120});
-  T('作成者',148,46,3.2);T(S.author||'',160,46,3.2,{w:38});
+  T('報告日',12,27,3.7,{b:1});T(d.length==3?d[0]+'年'+(+d[1])+'月'+(+d[2])+'日':'',30,27,3.7);
+  T('工事名',12,35,3.7,{b:1});T(S.title||'',30,35,3.7,{w:120});
+  T('作成者',152,41,3.2);T(S.author||'',164,41,3.2,{w:38});
   // 進捗・補足
-  T('外部工程進捗率',26,56,3.1,{b:1,a:'center'});T(pc(S.ext),26,66,4.2,{a:'center'});
-  T('内部工程進捗率',58,56,3.1,{b:1,a:'center'});T(pc(S.int),58,66,4.2,{a:'center'});
-  T('その他補足事項など',77,55,3.1,{b:1});
-  wrap(S.note,118,3.1).slice(0,4).forEach((t,i)=>T(t,77,60.5+i*3.9,3.1));
+  T('外部工程進捗率',22,50,3.1,{b:1,a:'center'});T(pc(S.ext),22,60,4.2,{a:'center'});
+  T('内部工程進捗率',54,50,3.1,{b:1,a:'center'});T(pc(S.int),54,60,4.2,{a:'center'});
+  T('その他補足事項など',73,49,3.1,{b:1});
+  wrap(S.note,127,3.1).slice(0,4).forEach((t,i)=>T(t,73,54.5+i*3.6,3.1));
   // 写真
-  for(let i=0;i<6;i++){const col=i%2,row=i>>1,gx=10+col*pw,y0=gy+row*rh,im=ims[i];
+  for(let i=0;i<6;i++){const col=i%2,row=i>>1,gx=M+col*pw,y0=gy+row*rh,im=ims[i];
     if(im){const sc=Math.max(m(pw)/im.width,m(ph)/im.height),sw=m(pw)/sc,sh=m(ph)/sc;
       x.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,m(gx),m(y0),m(pw),m(ph))}
     L(gx,y0+ph,gx+pw,y0+ph);if(row<2)L(gx,y0+rh,gx+pw,y0+rh);
     T(S.caps[i]||'',gx+2,y0+ph+cp*.66,3.2,{w:pw-4})}
   // 枠線
-  x.strokeRect(m(10),m(10),m(190),m(bottom-10));
-  L(10,50,200,50);L(10,72,200,72);L(42,50,42,72);L(74,50,74,72);L(105,gy,105,bottom);
+  x.strokeRect(m(M),m(M),m(198),m(bottom-M));
+  L(M,44,204,44);L(M,gy,204,gy);L(38,44,38,gy);L(70,44,70,gy);L(M+pw,gy,M+pw,bottom);
   const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'});
   const jd=c.toDataURL('image/jpeg',.88);window.__pageImg=jd;c.width=c.height=0;pdf.addImage(jd,'JPEG',0,0,210,296.9,undefined,'FAST');while(pdf.getNumberOfPages()>1)pdf.deletePage(pdf.getNumberOfPages());
   return pdf.output('blob')}
