@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -70,10 +70,13 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 .ph.has .x{display:block}
 .cap{height:9mm;border-top:.45mm solid #000;padding:.8mm 1.5mm}
 .cap textarea{width:100%;height:100%;resize:none;font-size:calc(3.1mm*var(--fx,1));line-height:1.25}
+.miss{background:#ffe3e0!important}
+.exporting .miss{background:transparent!important}
 .exporting .x,.exporting .hint{display:none!important}
 #toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:22px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:40;max-width:90vw}
 #toast.on{opacity:.95}
 @page{size:A4;margin:8mm}
+@media print{.miss{background:transparent!important}}
 @media print{
  body{background:#fff;padding:0}#top,#toast{display:none!important}
  #fitbox{width:auto!important;height:auto!important;margin:0}#stage{transform:none!important;width:auto}#paper{padding:0;box-shadow:none}#sheet{break-inside:avoid;page-break-inside:avoid;page-break-after:avoid}html,body{height:auto}
@@ -124,7 +127,7 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 <script>
 const $=s=>document.querySelector(s);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const blank=()=>({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:'',date:today(),author:'',ext:'0',int:'0',note:'',photos:Array.from({length:6},()=>({img:'',cap:''})),upd:Date.now()});
+const blank=()=>({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:'',date:today(),author:'',ext:'',int:'',note:'',photos:Array.from({length:6},()=>({img:'',cap:''})),upd:Date.now()});
 let db,cur,sites=[],pick=0,timer;
 
 /* ---------- IndexedDB ---------- */
@@ -135,7 +138,7 @@ const dbPut=o=>tx('readwrite',s=>s.put(o));
 const dbDel=id=>tx('readwrite',s=>s.delete(id));
 
 /* ---------- UI構築 ---------- */
-const opts=Array.from({length:21},(_,i)=>`<option value="${i*5}">${i*5}％</option>`).join('');
+const opts='<option value="">－</option>'+Array.from({length:21},(_,i)=>`<option value="${i*5}">${i*5}％</option>`).join('');
 $('#ext').innerHTML=opts;$('#int').innerHTML=opts;
 $('#grid').innerHTML=[0,1,2].map(r=>[0,1].map(c=>{const i=r*2+c;return `<div class="ph" data-i="${i}"><span class="hint"><i>＋</i>タップして画像を挿入</span><img><button class="x" data-i="${i}">×</button></div>`}).join('')+[0,1].map(c=>`<div class="cap"><textarea data-i="${r*2+c}" placeholder="画像内容の説明"></textarea></div>`).join('')).join('');
 
@@ -148,6 +151,7 @@ addEventListener('resize',fit);
 function render(){
  $('#date').value=cur.date;$('#title').value=cur.title;$('#author').value=cur.author;
  $('#ext').value=cur.ext;$('#int').value=cur.int;$('#note').value=cur.note;
+ document.querySelectorAll('.ph.miss').forEach(e=>e.classList.remove('miss'));
  document.querySelectorAll('.ph').forEach(p=>{const d=cur.photos[p.dataset.i];p.classList.toggle('has',!!d.img);p.querySelector('img').src=d.img||''});
  document.querySelectorAll('.cap textarea').forEach(t=>t.value=cur.photos[t.dataset.i].cap);
 }
@@ -221,11 +225,31 @@ $('#bPdf').onclick=async()=>{
   const pdf=new jspdf.jsPDF('p','mm','a4');
   let w=190,h=190*c.height/c.width;if(h>270){w=w*270/h;h=270}
   pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,12,w,h);
-  pdf.save(fname('pdf'));
+  pdf.save(pdfName()+'.pdf');
  }catch(err){alert('PDF作成に失敗しました。「PDF印刷」をお試しください。')}
  document.body.classList.remove('exporting');st.style.transform=tf;
 };
-$('#bPrint').onclick=()=>{document.title=fname('pdf').replace('.pdf','');window.print()};
+const pdfName=()=>{const t=(cur.title||'無題').trim().replace(/[\\/:*?"<>|]/g,'_');const e=cur.ext===''?'-':cur.ext,i=cur.int===''?'-':cur.int;return t+' 外部'+e+'％内部'+i+'％ 工事進捗報告書'};
+function checkMissing(){
+ const m=[];document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
+ const mk=(el,n)=>{m.push(n);el.classList.add('miss')};
+ if(!cur.date)mk($('#date'),'報告日');
+ if(!cur.title.trim())mk($('#title'),'工事名');
+ if(!cur.author.trim())mk($('#author'),'作成者');
+ if(cur.ext==='')mk($('#ext'),'外部工程進捗率');
+ if(cur.int==='')mk($('#int'),'内部工程進捗率');
+ if(!cur.photos.some(p=>p.img)){m.push('画像');document.querySelectorAll('.ph').forEach(e=>e.classList.add('miss'))}
+ if(!cur.photos.some(p=>p.cap.trim())){m.push('画像の説明文');document.querySelectorAll('.cap textarea').forEach(e=>e.classList.add('miss'))}
+ return m;
+}
+$('#sheet').addEventListener('input',e=>{e.target.classList.remove('miss');if(e.target.closest('.cap'))document.querySelectorAll('.cap .miss').forEach(x=>x.classList.remove('miss'))});
+$('#sheet').addEventListener('change',e=>e.target.classList.remove('miss'));
+$('#bPrint').onclick=()=>{
+ const m=checkMissing();
+ if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのまま印刷しますか?'))return;
+ document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
+ document.title=pdfName();window.print();
+};
 
 /* ---------- キャッシュ整理 ---------- */
 $('#bClean').onclick=async()=>{
