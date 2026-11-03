@@ -132,7 +132,6 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
  <h3>PDFを作成しました</h3>
  <p id="shareName"></p>
  <button class="b y" id="bShare">共有・印刷・ファイルに保存</button>
- <button class="s" id="bBrowser">ブラウザの印刷を使う</button>
  <button class="s" id="bShareClose">閉じる</button>
 </div></div>
 <div id="toast"></div>
@@ -231,7 +230,7 @@ $('#fJson').addEventListener('change',async e=>{
 
 /* ---------- PDF保存 / 印刷 ---------- */
 $('#bPdf').onclick=async()=>{
- if(!window.html2canvas||!window.jspdf){alert('PDF作成ライブラリを読み込めませんでした。ネット接続を確認するか「PDF印刷」から保存してください。');return}
+ if(!window.html2canvas||!window.jspdf){alert('PDF作成ライブラリを読み込めませんでした。ネット接続を確認してください。');return}
  const st=$('#stage'),tf=st.style.transform;toast('PDFを作成中…');
  st.style.transform='none';document.body.classList.add('exporting');
  try{
@@ -241,7 +240,7 @@ $('#bPdf').onclick=async()=>{
   let w=190,h=190*c.height/c.width;if(h>270){w=w*270/h;h=270}
   pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,12,w,h);
   pdf.save(pdfName()+'.pdf');
- }catch(err){alert('PDF作成に失敗しました。「PDF印刷」をお試しください。')}
+ }catch(err){console.error(err);alert('PDF作成に失敗しました。もう一度お試しください。')}
  document.body.classList.remove('exporting');st.style.transform=tf;
 };
 const pdfName=()=>{const t=(cur.title||'無題').trim().replace(/[\\/:*?"<>|]/g,'_');const e=cur.ext===''?'-':cur.ext,i=cur.int===''?'-':cur.int;return t+' 外部'+e+'％内部'+i+'％ 工事進捗報告書'};
@@ -272,32 +271,27 @@ async function renderPdfBlob(){
  }finally{document.body.classList.remove('exporting');st.style.transform=tf}
 }
 let pdfFile=null;
-const browserPrint=()=>{document.title=pdfName();window.print()};
-$('#bPrint').onclick=()=>{
+// iPhone/iPadではSafariのwindow.print()を使わず、PDFを直接生成して共有する
+async function preparePdfShare(){
  const m=checkMissing();
- if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのまま印刷しますか?'))return;
+ if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのままPDFを作成しますか?'))return;
  document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
- browserPrint();
-};
-$('#bPdfShare').onclick=async()=>{
- const m=checkMissing();
- if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのまま印刷しますか?'))return;
- document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
- if(!window.html2canvas||!window.jspdf){browserPrint();return}
+ if(!window.html2canvas||!window.jspdf){alert('PDF作成ライブラリを読み込めませんでした。ネット接続を確認してください。');return}
  toast('PDFを作成中…');
  try{
   const blob=await renderPdfBlob();
   pdfFile=new File([blob],pdfName()+'.pdf',{type:'application/pdf'});
   $('#shareName').textContent=pdfFile.name;$('#shareBg').hidden=false;
- }catch(err){alert('PDFの作成に失敗したため、ブラウザの印刷を使います。');browserPrint()}
-};
+ }catch(err){console.error(err);alert('PDFの作成に失敗しました。ネット接続と画像の読み込みを確認して、もう一度お試しください。')}
+}
+$('#bPrint').onclick=preparePdfShare;
+$('#bPdfShare').onclick=preparePdfShare;
 $('#bShare').onclick=async()=>{
  try{
   if(navigator.canShare&&navigator.canShare({files:[pdfFile]}))await navigator.share({files:[pdfFile],title:pdfName()});
   else dl(pdfFile,pdfFile.name);
  }catch(e){if(e.name!=='AbortError')dl(pdfFile,pdfFile.name)}
 };
-$('#bBrowser').onclick=()=>{$('#shareBg').hidden=true;browserPrint()};
 $('#bShareClose').onclick=()=>{$('#shareBg').hidden=true};
 
 /* ---------- キャッシュ整理 ---------- */
