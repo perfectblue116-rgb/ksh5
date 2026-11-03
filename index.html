@@ -227,7 +227,7 @@ $('#fJson').addEventListener('change',async e=>{
 });
 
 /* ---------- PDF共有 ---------- */
-const pdfName=()=>{const t=(cur.title||'無題').trim().replace(/[\\/:*?"<>|]/g,'_');const e=cur.ext===''?'-':cur.ext,i=cur.int===''?'-':cur.int;return t+' 外部'+e+'％内部'+i+'％ 工事進捗報告書'};
+const pdfName=()=>{const t=(cur.title||'無題').trim().replace(/[\\/:*?"<>|]/g,'_');const mo=cur.date?(+cur.date.slice(5,7))+'月 ':'';const e=cur.ext===''?'-':cur.ext,i=cur.int===''?'-':cur.int;return mo+t+' 外部'+e+'％内部'+i+'％ 工事進捗報告書'};
 function checkMissing(){
  const m=[];document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
  const mk=(el,n)=>{m.push(n);el.classList.add('miss')};
