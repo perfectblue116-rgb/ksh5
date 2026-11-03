@@ -75,11 +75,18 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 .exporting .x,.exporting .hint{display:none!important}
 #toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:22px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:40;max-width:90vw}
 #toast.on{opacity:.95}
-@page{size:A4;margin:8mm}
+#shareBg{position:fixed;inset:0;z-index:50;background:rgba(15,27,45,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+#shareBg[hidden]{display:none}
+#shareBox{width:100%;max-width:380px;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+#shareBox h3{margin:0;font-size:17px;color:var(--ink)}
+#shareBox p{margin:0 0 4px;font-size:12px;color:#5b6b80;word-break:break-all}
+#shareBox .b{height:50px;font-size:15px}
+@page{size:A4;margin:0}
+@media print{#shareBg{display:none!important}}
 @media print{.miss{background:transparent!important}}
 @media print{
  body{background:#fff;padding:0}#top,#toast{display:none!important}
- #fitbox{width:auto!important;height:auto!important;margin:0}#stage{transform:none!important;width:auto}#paper{padding:0;box-shadow:none}#sheet{break-inside:avoid;page-break-inside:avoid;page-break-after:avoid}html,body{height:auto}
+ #fitbox{width:auto!important;height:auto!important;margin:0}#stage{transform:none!important;width:auto}#paper{padding:9mm;box-shadow:none}#sheet{break-inside:avoid;page-break-inside:avoid;page-break-after:avoid}html,body{height:auto}
  .x,.hint{display:none!important}
 }
 </style>
@@ -95,6 +102,7 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
   <button class="b g" id="bBulk"><b>🖼</b>画像一括挿入</button>
   <button class="b y" id="bNew"><b>＋</b>新規作成</button>
   <button class="b bl" id="bPrint"><b>🖨</b>PDF印刷</button>
+  <button class="b w" id="bPdfShare"><b>⤴</b>PDF共有</button>
  </div>
  <div class="t3">
   <button class="s" id="bJson">JSON保存</button>
@@ -120,6 +128,13 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
  </div>
  <div class="g" id="grid"></div>
 </div></div></div></div>
+<div id="shareBg" hidden><div id="shareBox">
+ <h3>PDFを作成しました</h3>
+ <p id="shareName"></p>
+ <button class="b y" id="bShare">共有・印刷・ファイルに保存</button>
+ <button class="s" id="bBrowser">ブラウザの印刷を使う</button>
+ <button class="s" id="bShareClose">閉じる</button>
+</div></div>
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -244,12 +259,46 @@ function checkMissing(){
 }
 $('#sheet').addEventListener('input',e=>{e.target.classList.remove('miss');if(e.target.closest('.cap'))document.querySelectorAll('.cap .miss').forEach(x=>x.classList.remove('miss'))});
 $('#sheet').addEventListener('change',e=>e.target.classList.remove('miss'));
+async function renderPdfBlob(){
+ const st=$('#stage'),tf=st.style.transform;
+ st.style.transform='none';document.body.classList.add('exporting');
+ try{
+  await new Promise(r=>setTimeout(r,60));
+  const c=await html2canvas($('#sheet'),{scale:2.5,backgroundColor:'#fff',useCORS:true});
+  const pdf=new jspdf.jsPDF('p','mm','a4');
+  let w=190,h=190*c.height/c.width;if(h>270){w=w*270/h;h=270}
+  pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,12,w,h);
+  return pdf.output('blob');
+ }finally{document.body.classList.remove('exporting');st.style.transform=tf}
+}
+let pdfFile=null;
+const browserPrint=()=>{document.title=pdfName();window.print()};
 $('#bPrint').onclick=()=>{
  const m=checkMissing();
  if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのまま印刷しますか?'))return;
  document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
- document.title=pdfName();window.print();
+ browserPrint();
 };
+$('#bPdfShare').onclick=async()=>{
+ const m=checkMissing();
+ if(m.length&&!confirm('未入力項目があります\n\n・'+m.join('\n・')+'\n\nこのまま印刷しますか?'))return;
+ document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
+ if(!window.html2canvas||!window.jspdf){browserPrint();return}
+ toast('PDFを作成中…');
+ try{
+  const blob=await renderPdfBlob();
+  pdfFile=new File([blob],pdfName()+'.pdf',{type:'application/pdf'});
+  $('#shareName').textContent=pdfFile.name;$('#shareBg').hidden=false;
+ }catch(err){alert('PDFの作成に失敗したため、ブラウザの印刷を使います。');browserPrint()}
+};
+$('#bShare').onclick=async()=>{
+ try{
+  if(navigator.canShare&&navigator.canShare({files:[pdfFile]}))await navigator.share({files:[pdfFile],title:pdfName()});
+  else dl(pdfFile,pdfFile.name);
+ }catch(e){if(e.name!=='AbortError')dl(pdfFile,pdfFile.name)}
+};
+$('#bBrowser').onclick=()=>{$('#shareBg').hidden=true;browserPrint()};
+$('#bShareClose').onclick=()=>{$('#shareBg').hidden=true};
 
 /* ---------- キャッシュ整理 ---------- */
 $('#bClean').onclick=async()=>{
