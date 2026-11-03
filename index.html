@@ -50,8 +50,8 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 .row input{height:6.5mm;line-height:6.5mm;border-bottom:.2mm dotted #666!important;min-width:0}
 #date{width:42mm;-webkit-appearance:none;appearance:none;text-align:left;display:block}
 #title{flex:1}
-#author{width:42mm}
-.au{font-size:calc(2.8mm*var(--fx,1));flex:none;white-space:nowrap}
+#sheet #author{width:42mm;font-size:calc(3.953mm*var(--fx,1))}
+.au{font-size:calc(3.153mm*var(--fx,1));flex:none;white-space:nowrap}
 .prog{display:flex;height:18mm;border-bottom:.45mm solid #000}
 .prog>div{padding:1.5mm 2mm;border-right:.45mm solid #000;font-weight:bold;white-space:nowrap}
 .prog .p1,.prog .p2{width:35mm;text-align:center}
@@ -98,11 +98,9 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
   <div id="stat"><i class="dot"></i><span id="msg"></span><span id="info"></span></div>
  </div>
  <div class="tb"><div class="t2">
-  <button class="b w" id="bPdf"><b>⬇</b>PDF保存</button>
-  <button class="b g" id="bBulk"><b>🖼</b>画像一括挿入</button>
   <button class="b y" id="bNew"><b>＋</b>新規作成</button>
-  <button class="b bl" id="bPrint"><b>🖨</b>PDF印刷</button>
   <button class="b w" id="bPdfShare"><b>⤴</b>PDF共有</button>
+  <button class="b g" id="bBulk"><b>🖼</b>画像一括挿入</button>
  </div>
  <div class="t3">
   <button class="s" id="bJson">JSON保存</button>
@@ -228,21 +226,7 @@ $('#fJson').addEventListener('change',async e=>{
  }catch(err){toast('JSONを読み込めませんでした')}
 });
 
-/* ---------- PDF保存 / 印刷 ---------- */
-$('#bPdf').onclick=async()=>{
- if(!window.html2canvas||!window.jspdf){alert('PDF作成ライブラリを読み込めませんでした。ネット接続を確認してください。');return}
- const st=$('#stage'),tf=st.style.transform;toast('PDFを作成中…');
- st.style.transform='none';document.body.classList.add('exporting');
- try{
-  await new Promise(r=>setTimeout(r,60));
-  const c=await html2canvas($('#sheet'),{scale:2,backgroundColor:'#fff',useCORS:true});
-  const pdf=new jspdf.jsPDF('p','mm','a4');
-  let w=190,h=190*c.height/c.width;if(h>270){w=w*270/h;h=270}
-  pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,12,w,h);
-  pdf.save(pdfName()+'.pdf');
- }catch(err){console.error(err);alert('PDF作成に失敗しました。もう一度お試しください。')}
- document.body.classList.remove('exporting');st.style.transform=tf;
-};
+/* ---------- PDF共有 ---------- */
 const pdfName=()=>{const t=(cur.title||'無題').trim().replace(/[\\/:*?"<>|]/g,'_');const e=cur.ext===''?'-':cur.ext,i=cur.int===''?'-':cur.int;return t+' 外部'+e+'％内部'+i+'％ 工事進捗報告書'};
 function checkMissing(){
  const m=[];document.querySelectorAll('.miss').forEach(e=>e.classList.remove('miss'));
@@ -284,7 +268,6 @@ async function preparePdfShare(){
   $('#shareName').textContent=pdfFile.name;$('#shareBg').hidden=false;
  }catch(err){console.error(err);alert('PDFの作成に失敗しました。ネット接続と画像の読み込みを確認して、もう一度お試しください。')}
 }
-$('#bPrint').onclick=preparePdfShare;
 $('#bPdfShare').onclick=preparePdfShare;
 $('#bShare').onclick=async()=>{
  try{
