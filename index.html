@@ -27,7 +27,7 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 .tb{display:flex;flex-wrap:nowrap;gap:6px;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:1px 0}.tb::-webkit-scrollbar{display:none}.tb>*{flex:none;white-space:nowrap}.t2,.t3{display:contents}
 .b,.s{font-family:inherit;cursor:pointer;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid transparent}
 .b{height:38px;padding:0 11px;font-size:13px;border-radius:10px}
-.b b{font-size:14px;line-height:1}
+.b b{font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none}.b b svg{width:16px;height:16px;display:block}
 .b.w{background:#fff;color:var(--blue);border-color:#dbe6f3}
 .b.g{background:#e4f6ea;color:#1b7a3d;border-color:#8fd3a3}
 .b.y{background:#fff3d6;color:#8a5a00;border-color:#f2c96b}
@@ -81,17 +81,8 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 #shareBox h3{margin:0;font-size:17px;color:var(--ink)}
 #shareBox p{margin:0 0 4px;font-size:12px;color:#5b6b80;word-break:break-all}
 #shareBox .b{height:50px;font-size:15px}
-#aiBg{position:fixed;inset:0;z-index:50;background:rgba(15,27,45,.5);display:flex;align-items:center;justify-content:center;padding:20px}
-#aiBg[hidden]{display:none}
-#aiBox{width:100%;max-width:420px;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
-#aiBox h3{margin:0;font-size:17px;color:var(--ink)}
-#aiBox p{margin:0;font-size:12px;color:#5b6b80;line-height:1.5}
-#aiBox label{font-size:13px;font-weight:700;color:var(--ink);display:flex;flex-direction:column;gap:4px}
-#aiBox label.ck{flex-direction:row;align-items:center;gap:8px}
-#aiBox input[type=text],#aiBox input[type=password]{height:42px;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;font-size:16px;font-family:inherit;width:100%}
-#aiBox .b{height:46px;font-size:15px}
 @page{size:A4;margin:0}
-@media print{#shareBg,#aiBg{display:none!important}}
+@media print{#shareBg{display:none!important}}
 @media print{.miss{background:transparent!important}}
 @media print{
  body{background:#fff;padding:0}#top,#toast{display:none!important}
@@ -109,13 +100,14 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
  <div class="tb"><div class="t2">
   <button class="b y" id="bNew"><b>＋</b>新規作成</button>
   <button class="b w" id="bPdfShare"><b>⤴</b>PDF共有</button>
-  <button class="b g" id="bBulk"><b>🖼</b>画像一括挿入</button>
-  <button class="b bl" id="bAi"><b>✨</b>説明文をAI入力</button>
+  <button class="b g" id="bBulk"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 9"/></svg></b>画像一括挿入</button>
+  <button class="b bl" id="bAi"><b>✨</b>説明文を自動入力</button>
  </div>
  <div class="t3">
   <button class="s" id="bJson">JSON保存</button>
   <button class="s" id="bLoad">JSON読込</button>
-  <button class="s" id="bAiSet">AI設定</button>
+  <button class="s" id="bAiSet">自動入力:ON</button>
+  <button class="s" id="bScSet">状況推定:ON</button>
   <button class="s" id="bClean">キャッシュ整理</button>
   <button class="s d" id="bDel">現場削除</button>
  </div></div>
@@ -142,16 +134,6 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
  <p id="shareName"></p>
  <button class="b y" id="bShare">共有・印刷・ファイルに保存</button>
  <button class="s" id="bShareClose">閉じる</button>
-</div></div>
-<div id="aiBg" hidden><div id="aiBox">
- <h3>AI説明文の設定</h3>
- <p>画像を挿入すると、工事写真電子黒板の工種、または写真の状況をAIが読み取り、画像下の説明文に自動入力します(説明文が空の画像のみ。入力済みの文は上書きしません)。</p>
- <label>Anthropic APIキー<input type="password" id="aiKey" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off" spellcheck="false"></label>
- <label>モデル<input type="text" id="aiModel" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
- <label class="ck"><input type="checkbox" id="aiAuto">画像挿入時に自動で説明文を入力する</label>
- <p>※APIキーはこの端末のブラウザ内にだけ保存され、JSONやPDFには含まれません。画像はAnthropic APIへ送信されます。利用上限を設定した専用キーの使用を推奨します。</p>
- <button class="b y" id="aiSave">保存</button>
- <button class="s" id="aiClose">閉じる</button>
 </div></div>
 <div id="toast"></div>
 
@@ -217,7 +199,7 @@ function shrink(src,max,q){return new Promise((res,rej)=>{const im=new Image();i
 $('#fImg').addEventListener('change',async e=>{
  const f=e.target.files[0];e.target.value='';if(!f)return;
  const u=URL.createObjectURL(f);
- let ok=false;try{cur.photos[pick].img=await shrink(u,1280,0.8);render();save(true);ok=true}catch(err){toast('画像を読み込めませんでした')}
+ let ok=false;try{cur.photos[pick].img=await shrink(u,1280,0.8);HI.set(cur.photos[pick],f);render();save(true);ok=true}catch(err){toast('画像を読み込めませんでした')}
  URL.revokeObjectURL(u);
  if(ok)aiAuto(cur,[pick]);
 });
@@ -320,65 +302,274 @@ $('#fBulk').addEventListener('change',async e=>{
  const fs=Array.from(e.target.files);/* ファイル名で並べ替えず、選択した順(ブラウザが返した順)のまま挿入 */e.target.value='';
  if(!fs.length)return;toast('画像を処理中…');let n=0;const site=cur,ins=[];
  for(const f of fs){const i=cur.photos.findIndex(p=>!p.img);if(i<0)break;const u=URL.createObjectURL(f);
-  try{cur.photos[i].img=await shrink(u,1280,0.8);n++;ins.push(i)}catch(_){}URL.revokeObjectURL(u)}
+  try{cur.photos[i].img=await shrink(u,1280,0.8);HI.set(cur.photos[i],f);n++;ins.push(i)}catch(_){}URL.revokeObjectURL(u)}
  render();save(true);
  toast(n+'枚を挿入しました'+(n<fs.length?'(空き枠不足で'+(fs.length-n)+'枚は未挿入)':''));
  aiAuto(site,ins);
 });
 
-/* ---------- AI説明文の自動入力(工事写真電子黒板の工種／写真の状況) ---------- */
-const AI={get key(){return localStorage.getItem('pr_aikey')||''},get model(){return localStorage.getItem('pr_aimodel')||'claude-sonnet-5-5'},get auto(){return localStorage.getItem('pr_aiauto')!=='0'}};
-const AI_PROMPT='これは建設工事の施工写真です。写真の下に記入する説明文を作成してください。\n'+
- '1. 写真内に工事写真電子黒板(黒板・ホワイトボード)が写っていて文字が読める場合は、そこに書かれた工種(工事種別・工種名)を読み取り、説明文の先頭に【工種】の形で付け、続けて黒板の場所・部位・撮影内容と写真の状況を簡潔に書く。日付や会社名は不要。\n'+
- '2. 黒板が無い、または読めない場合は、写っている作業・部位・材料・状況から工種を推定し、「【工種】部位・状況」の形で見たままを書く。推定に自信がない場合は工種を付けず、状況のみ書く。\n'+
- '3. 全体で40文字以内、体言止め。写っていないことは書かない。\n'+
- '出力はJSONのみ(前後の文章やコードブロックは不要): {"blackboard":true または false,"koshu":"工種(不明なら空文字)","caption":"説明文"}';
-async function aiDescribe(dataUrl){
- const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-  headers:{'content-type':'application/json','x-api-key':AI.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-  body:JSON.stringify({model:AI.model,max_tokens:300,messages:[{role:'user',content:[
-   {type:'image',source:{type:'base64',media_type:'image/jpeg',data:dataUrl.split(',')[1]}},
-   {type:'text',text:AI_PROMPT}]}]})});
- if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e}
- const j=await r.json(),t=(j.content||[]).map(c=>c.text||'').join(''),m=t.match(/\{[\s\S]*\}/);
- if(!m)throw new Error('parse');
- const o=JSON.parse(m[0]);let cap=String(o.caption||'').trim();const k=String(o.koshu||'').trim();
- if(k&&!cap.includes(k))cap='【'+k+'】'+cap;
- return cap.slice(0,60);
+/* ---------- 説明文の自動入力(端末内OCR:工事写真電子黒板の工種を読み取り) ---------- */
+/* 画像はサーバーへ送信されません。初回のみOCR用ライブラリと日本語辞書(十数MB)をダウンロードします */
+const OCR={get auto(){return localStorage.getItem('pr_ocrauto')!=='0'}};
+/* 黒板から「○○工事」(鉄骨工事・防水工事など)の工種だけを取り出す。工事名(○○新築工事など)は除外 */
+const KLASS=/[一-龥々ぁ-ゟァ-ヶー]/;
+const KLBL=['工事種別','工事名','工種','種別','測点','場所','部位','撮影内容','内容','工事'];
+const KBAD=/新築|改修|増築|改築|修繕|新設|大規模|リフォーム|営繕|改装|補強/;
+/* 工種辞書:OCRの誤読(例:鉄財工事→鉄骨工事)を1〜2文字の違いまで自動補正。自社でよく使う工種を足してください */
+const KOSHU=['仮設工事','足場工事','解体工事','はつり工事','土工事','掘削工事','杭工事','基礎工事','鉄筋工事','型枠工事','コンクリート工事','鉄骨工事','軽量鉄骨下地工事','ボード工事','耐火被覆工事','防水工事','シーリング工事','左官工事','タイル工事','石工事','屋根工事','板金工事','外壁工事','塗装工事','吹付工事','断熱工事','内装工事','クロス工事','床工事','天井工事','木工事','造作工事','建具工事','サッシ工事','ガラス工事','金属工事','手摺工事','電気工事','電気設備工事','空調設備工事','換気設備工事','給排水設備工事','衛生設備工事','消防設備工事','設備工事','管工事','外構工事','舗装工事','養生工事','清掃工事','耐震補強工事','検査','中間検査','完了検査','竣工検査','社内検査','配筋検査','施主検査','立会検査','受入検査','引渡し','引き渡し','是正','清掃','養生','搬入','測量','墨出し','調査','現況調査','試験','施工前','施工後','完了','竣工'];
+/* 字形が似ていてOCRが取り違えやすい文字(同じ組の文字どうしは入れ替わりを軽く扱う) */
+const CONF=['骨財貝胃肯','筋助肋劫','鉄鋏銑鉢','塗途涂','型形刑','枠粋','左在佐','官宮','防坊妨','設説','備構','空宅','衛衞','舗鋪','屋層','板坂','床庁','建健','具貝','吹次','解角','仮坂','足是','基墓','礎楚','筋筒','電雷','管菅','給結','衛術'];
+const sub=(x,y)=>x===y?0:(CONF.some(g=>g.includes(x)&&g.includes(y))?.4:1);
+function lev(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i]);for(let j=1;j<=n;j++)d[0][j]=j;
+ for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+sub(a[i-1],b[j-1]));return d[m][n]}
+function snapKoshu(n){
+ let best=n,bd=99,ties=0;
+ for(const k of KOSHU){const dd=lev(n,k);if(dd<bd-1e-9){bd=dd;best=k;ties=1}else if(Math.abs(dd-bd)<1e-9)ties++}
+ if(bd===0)return{n,exact:true};
+ if(n.length>=3&&bd<=(n.length>=6?2:1)+1e-9&&ties===1)return{n:best,exact:true};
+ return{n,exact:false};
+}
+const KSTOP=['工事名','撮影内容','測点','場所','部位','箇所','位置','内容','日付','備考','施工','工事種別','種別','工種'];
+function ocrParse(raw){
+ const t=raw.replace(/[ \t\r\n\u3000|｜│┃¦]+/g,'').replace(/[:：;；]+/g,'：');
+ const cand=[];
+ /* ①「工種」欄の値を最優先で取得(○○工事に限らず、検査・引渡しなども) */
+ const lre=/(工事種別|工種|種別|[工エ][種穂稀程])/g;let m;
+ while((m=lre.exec(t))){
+  const rest=t.slice(m.index+m[0].length).replace(/^[：\-]+/,'');
+  let v='';for(const ch of rest){if(!KLASS.test(ch))break;v+=ch;if(v.length>=14)break}
+  let cut=v.length;for(const L of KSTOP){const j=v.indexOf(L);if(j>=0&&j<cut)cut=j}
+  v=v.slice(0,cut);
+  if(v.length>=2){const sn=snapKoshu(v);if(sn.exact||v.length<=10)cand.push({n:sn.n,lab:true,exact:sn.exact,s:10+(sn.exact?3:0)+(/工事$/.test(sn.n)?1:0)})}
+ }
+ /* ②見出しが読めなかった場合の予備:「○○工事」の表記を探す(工事名は除外) */
+ let i=-1;
+ while((i=t.indexOf('工事',i+1))>=0){
+  if(t[i+2]==='名'||t[i+2]==='種')continue;
+  let k=i,back='';while(k>0&&back.length<14&&KLASS.test(t[k-1])){k--;back=t[k]+back}
+  let cut=0;
+  for(const L of KLBL){let j=-1;while((j=back.indexOf(L,j+1))>=0)cut=Math.max(cut,j+L.length)}
+  const r=back.slice(cut);
+  if(r.length>=1&&r.length<=6&&!KBAD.test(r)){const sn=snapKoshu(r+'工事');cand.push({n:sn.n,lab:false,exact:sn.exact,s:5+(sn.exact?3:0)})}
+ }
+ cand.sort((a,b)=>b.s-a.s);
+ const pick=cand[0];
+ return pick?{cap:pick.n,score:pick.s,labeled:pick.lab,exact:pick.exact}:{cap:'',score:0,labeled:false,exact:false};
+}
+function ocrWords(d){
+ let ws=d.words;
+ if(!ws||!ws.length){ws=[];for(const b of d.blocks||[])for(const p of b.paragraphs||[])for(const l of p.lines||[])for(const x of l.words||[])ws.push(x)}
+ return ws.filter(x=>x&&x.bbox&&x.text);
+}
+const HI=new WeakMap();   /* OCR用の高解像度画像(挿入直後のみメモリ保持。保存データには含めない) */
+function ocrCanvas(im,inv,crop,scale){
+ const cr=crop||{x:0,y:0,w:1,h:1},sc=scale||1,IW=im.naturalWidth,IH=im.naturalHeight;
+ const sx=Math.round(IW*cr.x),sy=Math.round(IH*cr.y),sw=Math.max(1,Math.round(IW*cr.w)),sh=Math.max(1,Math.round(IH*cr.h));
+ const c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*sc));c.height=Math.max(1,Math.round(sh*sc));
+ const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);
+ const cw=c.width,ch=c.height,d=x.getImageData(0,0,cw,ch),a=d.data,g=new Uint8Array(cw*ch);
+ for(let i=0,j=0;j<cw*ch;i+=4,j++)g[j]=(a[i]*.299+a[i+1]*.587+a[i+2]*.114)|0;
+ /* 適応二値化:周囲の平均より暗い(反転時は明るい)画素だけを文字として残す。背景が明暗まだらでも文字がくっきりする */
+ const R=Math.max(8,Math.round(cw/32)),T=12,W1=cw+1,I=new Float64Array(W1*(ch+1));
+ for(let y=0;y<ch;y++){let rs=0;for(let xx=0;xx<cw;xx++){rs+=g[y*cw+xx];I[(y+1)*W1+xx+1]=I[y*W1+xx+1]+rs}}
+ for(let y=0;y<ch;y++){const y0=Math.max(0,y-R),y1=Math.min(ch,y+R+1);
+  for(let xx=0;xx<cw;xx++){const x0=Math.max(0,xx-R),x1=Math.min(cw,xx+R+1);
+   const m=(I[y1*W1+x1]-I[y0*W1+x1]-I[y1*W1+x0]+I[y0*W1+x0])/((y1-y0)*(x1-x0));
+   const v=g[y*cw+xx],ink=inv?v>m+T:v<m-T,o=(y*cw+xx)*4;
+   a[o]=a[o+1]=a[o+2]=ink?0:255;a[o+3]=255}}
+ x.putImageData(d,0,0);return c;
+}
+function loadImg(src){return new Promise((ok,ng)=>{const im=new Image();let url=null;
+ im.onload=()=>ok({im,url});im.onerror=()=>{if(url)URL.revokeObjectURL(url);ng(new Error('img'))};
+ if(typeof src==='string')im.src=src;else{url=URL.createObjectURL(src);im.src=url}})}
+let ocrP=null;
+function ocrWorker(){
+ if(ocrP)return ocrP;
+ ocrP=(async()=>{
+  if(!window.Tesseract)await new Promise((ok,ng)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';s.onload=ok;s.onerror=()=>ng(new Error('lib'));document.head.appendChild(s)});
+  const w=await Tesseract.createWorker('jpn');
+  await w.setParameters({tessedit_pageseg_mode:'11'});
+  return w;
+ })();
+ ocrP.catch(()=>{ocrP=null});
+ return ocrP;
+}
+/* 電子黒板の外枠(左右端のそろった上下の長い罫線)を探し、黒板だけの範囲を返す */
+function boardRows(g,w,h){
+ const R=Math.max(8,Math.round(Math.min(w,h)/30)),T=18,W1=w+1,I=new Float64Array(W1*(h+1));
+ for(let y=0;y<h;y++){let rs=0;for(let x=0;x<w;x++){rs+=g[y*w+x];I[(y+1)*W1+x+1]=I[y*W1+x+1]+rs}}
+ const dark=new Uint8Array(w*h);
+ for(let y=0;y<h;y++){const y0=Math.max(0,y-R),y1=Math.min(h,y+R+1);
+  for(let x=0;x<w;x++){const x0=Math.max(0,x-R),x1=Math.min(w,x+R+1);
+   const m=(I[y1*W1+x1]-I[y0*W1+x1]-I[y1*W1+x0]+I[y0*W1+x0])/((y1-y0)*(x1-x0));
+   if(g[y*w+x]<m-T)dark[y*w+x]=1}}
+ const minLen=Math.max(40,Math.round(w*0.15)),cand=[];
+ for(let y=0;y<h;y++){
+  let best=0,bs=0,be=0,rs=-1,last=-9;
+  for(let x=0;x<=w;x++){
+   const d=x<w&&dark[y*w+x];
+   if(d){if(rs<0)rs=x;last=x}
+   else if(rs>=0&&(x-last>2||x===w)){const len=last-rs+1;if(len>best){best=len;bs=rs;be=last}rs=-1}
+  }
+  if(best>=minLen)cand.push({y,xs:bs,xe:be,len:best});
+ }
+ const lines=[];
+ for(const c of cand){const L=lines[lines.length-1];
+  if(L&&c.y-L.yEnd<=2){L.yEnd=c.y;if(c.len>L.len){L.len=c.len;L.xs=c.xs;L.xe=c.xe}}
+  else lines.push({y0:c.y,yEnd:c.y,xs:c.xs,xe:c.xe,len:c.len})}
+ lines.forEach(L=>L.y=(L.y0+L.yEnd)/2);
+ const tol=Math.max(8,w*0.03);let bestG=null;
+ for(const a of lines){
+  const grp=lines.filter(b=>Math.abs(b.xs-a.xs)<=tol&&Math.abs(b.xe-a.xe)<=tol).sort((p,q)=>p.y-q.y);
+  if(grp.length<2)continue;
+  const span=grp[grp.length-1].y-grp[0].y,score=span+grp.length*5;
+  if(span>=h*0.12&&(!bestG||score>bestG.score))bestG={grp,score};
+ }
+ if(!bestG)return null;
+ const grp=bestG.grp;
+ return{x0:Math.min(...grp.map(b=>b.xs)),x1:Math.max(...grp.map(b=>b.xe)),y0:grp[0].y,y1:grp[grp.length-1].y};
+}
+function detectFrame(im,R){
+ const IW=im.naturalWidth,ds=Math.min(1,1400/R.w);
+ const w=Math.max(20,Math.round(R.w*ds)),h=Math.max(20,Math.round(R.h*ds));
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+ x.drawImage(im,R.x,R.y,R.w,R.h,0,0,w,h);
+ const a=x.getImageData(0,0,w,h).data,g=new Uint8Array(w*h);
+ for(let i=0,j=0;j<w*h;i+=4,j++)g[j]=(a[i]*.299+a[i+1]*.587+a[i+2]*.114)|0;
+ const f=boardRows(g,w,h);if(!f)return null;
+ const mx=(f.x1-f.x0)*.03,my=(f.y1-f.y0)*.03,bx=Math.max(0,f.x0-mx),by=Math.max(0,f.y0-my);
+ const bw=Math.min(w-bx,f.x1-f.x0+2*mx),bh=Math.min(h-by,f.y1-f.y0+2*my);
+ const B={x:R.x+bx/ds,y:R.y+by/ds,w:bw/ds,h:bh/ds};
+ return(B.w>=IW*0.06&&B.w<=IW*0.7)?B:null;
+}
+async function ocrCaption(source){
+ const w=await ocrWorker();
+ const {im,url}=await loadImg(source);
+ try{
+  const W=im.naturalWidth,H=im.naturalHeight;
+  let best={cap:'',score:0,labeled:false,exact:false};
+  const take=r=>{if(r.score>best.score)best=r};
+  const done=()=>best.labeled&&best.exact;
+  const rec=async(inv,crop,sc,psm)=>{await w.setParameters({tessedit_pageseg_mode:psm});return(await w.recognize(ocrCanvas(im,inv,crop,sc))).data};
+  const frac=r=>({x:r.x/W,y:r.y/H,w:r.w/W,h:r.h/H});
+  /* 領域R(元画像のpx)を読み取る。①領域全体→②「工種」行だけ切り出して拡大・1行モードで再読取 */
+  const pass=async R=>{
+   const sc0=Math.min(R.tight?5:3,Math.max(0.4,1800/R.w));
+   for(const inv of [false,true]){
+    const d=await rec(inv,frac(R),sc0,'11');take(ocrParse(d.text||''));
+    if(done())return;
+    const found=[];
+    for(const x of ocrWords(d)){const t=x.text.replace(/\s+/g,'');if(/工事名/.test(t))continue;
+     const b=x.bbox,bb={x0:R.x+b.x0/sc0,x1:R.x+b.x1/sc0,y0:R.y+b.y0/sc0,y1:R.y+b.y1/sc0};
+     if(/種/.test(t))found.push({b:bb,pr:0});else if(/工事|検査|引渡/.test(t))found.push({b:bb,pr:1})}
+    if(found.length||best.cap){
+     found.sort((a,b)=>a.pr-b.pr);const used=[];
+     for(const f of found){
+      const h=Math.max(8,f.b.y1-f.b.y0),cy=(f.b.y0+f.b.y1)/2;
+      if(used.some(u=>Math.abs(u-cy)<h))continue;used.push(cy);if(used.length>3)break;
+      const x0=Math.max(0,f.b.x0-h),x1=Math.min(W,f.b.x1+8*h),y0=Math.max(0,f.b.y0-h*.6),y1=Math.min(H,f.b.y1+h*.6);
+      const sc=Math.min(5,Math.max(1,110/(y1-y0)));
+      for(const iv of [false,true]){const dd=await rec(iv,frac({x:x0,y:y0,w:x1-x0,h:y1-y0}),sc,'7');take(ocrParse(dd.text||''));if(done())return;if(best.cap)break}
+     }
+     return;
+    }
+   }
+  };
+  /* 電子黒板は画面の隅に置かれるのが通常。右下→左下→右上→左上の順に元解像度で読み、工種が取れたら終了 */
+  const CORN=[{x:.5,y:.5},{x:0,y:.5},{x:.5,y:0},{x:0,y:0}];
+  /* ①各隅で黒板の外枠を検出→黒板だけを切り出して拡大して読む(小さい黒板でも文字が大きくなる) */
+  for(const c of CORN){
+   const B=detectFrame(im,{x:W*c.x,y:H*c.y,w:W*.5,h:H*.5});
+   if(B){await pass({x:B.x,y:B.y,w:B.w,h:B.h,tight:true});if(best.labeled)return best.cap}
+  }
+  /* ②枠が見つからない場合:隅の領域をそのまま読む */
+  for(const c of CORN){
+   await pass({x:W*c.x,y:H*c.y,w:W*.5,h:H*.5});
+   if(best.labeled)return best.cap;
+  }
+  /* 隅になければ画像全体 */
+  if(!best.cap)await pass({x:0,y:0,w:W,h:H});
+  return best.cap;
+ }finally{if(url)URL.revokeObjectURL(url)}
+}
+/* ---------- 黒板が読めない写真:写真の見た目から作業内容を推定(端末内のCLIPモデル、画像は送信されません) ---------- */
+/* 初回のみモデル(約150MB)を取得し、以後はブラウザにキャッシュされます。結果は「(推定)」付きで入ります */
+const SC={get auto(){return localStorage.getItem('pr_scauto')!=='0'}};
+/* [英語の説明(モデル用), 説明文に入れる日本語] ※足したり直したりできます */
+const SCENES=[
+['reinforcing steel bars rebar assembly at a construction site','鉄筋工事'],
+['wooden or plywood formwork for concrete','型枠工事'],
+['pouring fresh concrete with a pump hose','コンクリート打設'],
+['steel beams and columns with bolts, steel frame erection','鉄骨工事'],
+['scaffolding on a building','足場工事'],
+['waterproofing membrane on a roof or balcony floor','防水工事'],
+['plastering a wall with a trowel and mortar','左官工事'],
+['installing tiles','タイル工事'],
+['painting a wall with a roller or brush','塗装工事'],
+['installing wallpaper or interior finishing','内装工事'],
+['installing plasterboard or light gauge steel studs','ボード・軽鉄工事'],
+['ceiling construction','天井工事'],
+['laying floor finishing or flooring','床工事'],
+['demolition of a building interior','解体工事'],
+['excavation and earthwork with an excavator','土工事'],
+['pipes and plumbing installation','配管工事'],
+['electrical wiring and conduits','電気工事'],
+['air conditioning duct installation','空調設備工事'],
+['roofing work','屋根工事'],
+['exterior wall work','外壁工事'],
+['spraying insulation foam','断熱・吹付工事'],
+['asphalt paving of a road or parking lot','舗装工事'],
+['installing a window frame or door','建具工事'],
+['cleaning after construction','清掃'],
+['inspection or measurement with a measuring tape','検査・計測'],
+['protective covering or masking of floors and walls','養生'],
+['a finished room interior','完了状況'],
+['a work site before construction','施工前']
+];
+let scP=null;
+function sceneModel(){
+ if(scP)return scP;
+ scP=(async()=>{const T=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');T.env.allowLocalModels=false;
+  return await T.pipeline('zero-shot-image-classification','Xenova/clip-vit-base-patch32')})();
+ scP.catch(()=>{scP=null});
+ return scP;
+}
+async function sceneCaption(img){
+ const pl=await sceneModel();
+ const r=await pl(img,SCENES.map(x=>x[0]));
+ const t=r[0],n=r[1];
+ if(!t||t.score<0.3||(n&&t.score-n.score<0.08))return '';   /* 自信が低いときは入れない */
+ const hit=SCENES.find(x=>x[0]===t.label);
+ return hit?hit[1]+'(推定)':'';
 }
 const aiPending=new Set();let aiHinted=false;
 async function aiFill(site,idxs,quiet){
- if(!AI.key){if(!quiet)toast('先に「AI設定」でAPIキーを入力してください');return}
  const ta=i=>document.querySelector('.cap textarea[data-i="'+i+'"]');
  const targets=idxs.filter(i=>site.photos[i].img&&!site.photos[i].cap.trim()&&!aiPending.has(site.id+':'+i));
- if(!targets.length){if(!quiet)toast('対象がありません(説明文が空の画像のみ解析します)');return}
- targets.forEach(i=>{aiPending.add(site.id+':'+i);const t=ta(i);if(t&&site===cur)t.placeholder='AI解析中…'});
- let ok=0,ng=0,bad=false;
+ if(!targets.length){if(!quiet)toast('対象がありません(説明文が空の画像のみ読み取ります)');return}
+ targets.forEach(i=>{aiPending.add(site.id+':'+i);const t=ta(i);if(t&&site===cur)t.placeholder='黒板を読み取り中…'});
+ if(!ocrP)toast('文字認識を準備中…(初回のみ時間がかかります)');
+ let ok=0,ng=0,none=0,est=0;
  for(const i of targets){
   const img=site.photos[i].img;
   try{
-   const cap=await aiDescribe(img),p=site.photos[i];
-   if(cap&&p.img===img&&!p.cap.trim()){p.cap=cap;ok++;const t=ta(i);if(t&&site===cur)t.value=cap}
-  }catch(err){ng++;if(err.status===401||err.status===403){bad=true;break}}
+   let cap=await ocrCaption(HI.get(site.photos[i])||img);const p=site.photos[i];HI.delete(p);
+   if(!cap&&SC.auto){if(!scP)toast('写真の状況を推定中…(初回はモデル取得に時間がかかります)');try{cap=await sceneCaption(img);if(cap)est++}catch(e){console.error(e)}}
+   if(!cap)none++;
+   else if(p.img===img&&!p.cap.trim()){p.cap=cap;ok++;const t=ta(i);if(t&&site===cur)t.value=cap}
+  }catch(err){console.error(err);ng++;if(!ocrP)break}
  }
  targets.forEach(i=>{aiPending.delete(site.id+':'+i);const t=ta(i);if(t)t.placeholder='画像内容の説明'});
  if(ok){if(site===cur)save(true);else{site.upd=Date.now();try{await dbPut(site)}catch(_){}}}
- toast(bad?'APIキーが無効です。AI設定を確認してください':ok?'説明文を'+ok+'件AI入力しました'+(ng?'('+ng+'件は失敗)':''):ng?'AI解析に失敗しました(通信・APIキーを確認)':'');
+ toast(ok?'説明文を'+ok+'件自動入力しました'+(est?'('+est+'件は写真からの推定。要確認)':'')+(none?'(黒板を読めなかった'+none+'枚は空欄)':''):
+  ng&&!none?'文字認識を開始できませんでした(ネット接続を確認してください)':'「○○工事」を読み取れませんでした(手入力してください)');
 }
-function aiAuto(site,idxs){
- if(!AI.auto||!idxs.length)return;
- if(!AI.key){if(!aiHinted){aiHinted=true;setTimeout(()=>toast('「AI設定」にAPIキーを入力すると説明文を自動入力できます'),2000)}return}
- aiFill(site,idxs,true);
-}
+function aiAuto(site,idxs){if(OCR.auto&&idxs.length)aiFill(site,idxs,true)}
 $('#bAi').onclick=()=>aiFill(cur,[0,1,2,3,4,5],false);
-$('#bAiSet').onclick=()=>{$('#aiKey').value=AI.key;$('#aiModel').value=AI.model;$('#aiAuto').checked=AI.auto;$('#aiBg').hidden=false};
-$('#aiClose').onclick=()=>{$('#aiBg').hidden=true};
-$('#aiSave').onclick=()=>{
- localStorage.setItem('pr_aikey',$('#aiKey').value.trim());
- localStorage.setItem('pr_aimodel',$('#aiModel').value.trim()||'claude-sonnet-5-5');
- localStorage.setItem('pr_aiauto',$('#aiAuto').checked?'1':'0');
- $('#aiBg').hidden=true;toast('AI設定を保存しました');
-};
+const setAutoLbl=()=>{$('#bAiSet').textContent='自動入力:'+(OCR.auto?'ON':'OFF')};setAutoLbl();
+const setScLbl=()=>{$('#bScSet').textContent='状況推定:'+(SC.auto?'ON':'OFF')};setScLbl();
+$('#bScSet').onclick=()=>{localStorage.setItem('pr_scauto',SC.auto?'0':'1');setScLbl();toast('黒板が読めない写真の状況推定を'+(SC.auto?'ONにしました':'OFFにしました'))};
+$('#bAiSet').onclick=()=>{localStorage.setItem('pr_ocrauto',OCR.auto?'0':'1');setAutoLbl();toast('画像挿入時の自動入力を'+(OCR.auto?'ONにしました':'OFFにしました'))};
 
 /* ---------- 起動 ---------- */
 (async()=>{
