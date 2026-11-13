@@ -81,8 +81,17 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
 #shareBox h3{margin:0;font-size:17px;color:var(--ink)}
 #shareBox p{margin:0 0 4px;font-size:12px;color:#5b6b80;word-break:break-all}
 #shareBox .b{height:50px;font-size:15px}
+#aiBg{position:fixed;inset:0;z-index:50;background:rgba(15,27,45,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+#aiBg[hidden]{display:none}
+#aiBox{width:100%;max-width:420px;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+#aiBox h3{margin:0;font-size:17px;color:var(--ink)}
+#aiBox p{margin:0;font-size:12px;color:#5b6b80;line-height:1.5}
+#aiBox label{font-size:13px;font-weight:700;color:var(--ink);display:flex;flex-direction:column;gap:4px}
+#aiBox label.ck{flex-direction:row;align-items:center;gap:8px}
+#aiBox input[type=text],#aiBox input[type=password]{height:42px;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;font-size:16px;font-family:inherit;width:100%}
+#aiBox .b{height:46px;font-size:15px}
 @page{size:A4;margin:0}
-@media print{#shareBg{display:none!important}}
+@media print{#shareBg,#aiBg{display:none!important}}
 @media print{.miss{background:transparent!important}}
 @media print{
  body{background:#fff;padding:0}#top,#toast{display:none!important}
@@ -101,10 +110,12 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
   <button class="b y" id="bNew"><b>＋</b>新規作成</button>
   <button class="b w" id="bPdfShare"><b>⤴</b>PDF共有</button>
   <button class="b g" id="bBulk"><b>🖼</b>画像一括挿入</button>
+  <button class="b bl" id="bAi"><b>✨</b>説明文をAI入力</button>
  </div>
  <div class="t3">
   <button class="s" id="bJson">JSON保存</button>
   <button class="s" id="bLoad">JSON読込</button>
+  <button class="s" id="bAiSet">AI設定</button>
   <button class="s" id="bClean">キャッシュ整理</button>
   <button class="s d" id="bDel">現場削除</button>
  </div></div>
@@ -131,6 +142,16 @@ body{margin:0;background:#e8f0fa;font-family:-apple-system,"Hiragino Sans","Yu G
  <p id="shareName"></p>
  <button class="b y" id="bShare">共有・印刷・ファイルに保存</button>
  <button class="s" id="bShareClose">閉じる</button>
+</div></div>
+<div id="aiBg" hidden><div id="aiBox">
+ <h3>AI説明文の設定</h3>
+ <p>画像を挿入すると、工事写真電子黒板の工種、または写真の状況をAIが読み取り、画像下の説明文に自動入力します(説明文が空の画像のみ。入力済みの文は上書きしません)。</p>
+ <label>Anthropic APIキー<input type="password" id="aiKey" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+ <label>モデル<input type="text" id="aiModel" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+ <label class="ck"><input type="checkbox" id="aiAuto">画像挿入時に自動で説明文を入力する</label>
+ <p>※APIキーはこの端末のブラウザ内にだけ保存され、JSONやPDFには含まれません。画像はAnthropic APIへ送信されます。利用上限を設定した専用キーの使用を推奨します。</p>
+ <button class="b y" id="aiSave">保存</button>
+ <button class="s" id="aiClose">閉じる</button>
 </div></div>
 <div id="toast"></div>
 
@@ -196,8 +217,9 @@ function shrink(src,max,q){return new Promise((res,rej)=>{const im=new Image();i
 $('#fImg').addEventListener('change',async e=>{
  const f=e.target.files[0];e.target.value='';if(!f)return;
  const u=URL.createObjectURL(f);
- try{cur.photos[pick].img=await shrink(u,1280,0.8);render();save(true)}catch(err){toast('画像を読み込めませんでした')}
+ let ok=false;try{cur.photos[pick].img=await shrink(u,1280,0.8);render();save(true);ok=true}catch(err){toast('画像を読み込めませんでした')}
  URL.revokeObjectURL(u);
+ if(ok)aiAuto(cur,[pick]);
 });
 
 /* ---------- 現場操作 ---------- */
@@ -295,13 +317,68 @@ $('#bClean').onclick=async()=>{
 /* ---------- 画像一括挿入 ---------- */
 $('#bBulk').onclick=()=>$('#fBulk').click();
 $('#fBulk').addEventListener('change',async e=>{
- const fs=[...e.target.files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));e.target.value='';
- if(!fs.length)return;toast('画像を処理中…');let n=0;
+ const fs=Array.from(e.target.files);/* ファイル名で並べ替えず、選択した順(ブラウザが返した順)のまま挿入 */e.target.value='';
+ if(!fs.length)return;toast('画像を処理中…');let n=0;const site=cur,ins=[];
  for(const f of fs){const i=cur.photos.findIndex(p=>!p.img);if(i<0)break;const u=URL.createObjectURL(f);
-  try{cur.photos[i].img=await shrink(u,1280,0.8);n++}catch(_){}URL.revokeObjectURL(u)}
+  try{cur.photos[i].img=await shrink(u,1280,0.8);n++;ins.push(i)}catch(_){}URL.revokeObjectURL(u)}
  render();save(true);
  toast(n+'枚を挿入しました'+(n<fs.length?'(空き枠不足で'+(fs.length-n)+'枚は未挿入)':''));
+ aiAuto(site,ins);
 });
+
+/* ---------- AI説明文の自動入力(工事写真電子黒板の工種／写真の状況) ---------- */
+const AI={get key(){return localStorage.getItem('pr_aikey')||''},get model(){return localStorage.getItem('pr_aimodel')||'claude-sonnet-5-5'},get auto(){return localStorage.getItem('pr_aiauto')!=='0'}};
+const AI_PROMPT='これは建設工事の施工写真です。写真の下に記入する説明文を作成してください。\n'+
+ '1. 写真内に工事写真電子黒板(黒板・ホワイトボード)が写っていて文字が読める場合は、そこに書かれた工種(工事種別・工種名)を読み取り、説明文の先頭に【工種】の形で付け、続けて黒板の場所・部位・撮影内容と写真の状況を簡潔に書く。日付や会社名は不要。\n'+
+ '2. 黒板が無い、または読めない場合は、写っている作業・部位・材料・状況から工種を推定し、「【工種】部位・状況」の形で見たままを書く。推定に自信がない場合は工種を付けず、状況のみ書く。\n'+
+ '3. 全体で40文字以内、体言止め。写っていないことは書かない。\n'+
+ '出力はJSONのみ(前後の文章やコードブロックは不要): {"blackboard":true または false,"koshu":"工種(不明なら空文字)","caption":"説明文"}';
+async function aiDescribe(dataUrl){
+ const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+  headers:{'content-type':'application/json','x-api-key':AI.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+  body:JSON.stringify({model:AI.model,max_tokens:300,messages:[{role:'user',content:[
+   {type:'image',source:{type:'base64',media_type:'image/jpeg',data:dataUrl.split(',')[1]}},
+   {type:'text',text:AI_PROMPT}]}]})});
+ if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e}
+ const j=await r.json(),t=(j.content||[]).map(c=>c.text||'').join(''),m=t.match(/\{[\s\S]*\}/);
+ if(!m)throw new Error('parse');
+ const o=JSON.parse(m[0]);let cap=String(o.caption||'').trim();const k=String(o.koshu||'').trim();
+ if(k&&!cap.includes(k))cap='【'+k+'】'+cap;
+ return cap.slice(0,60);
+}
+const aiPending=new Set();let aiHinted=false;
+async function aiFill(site,idxs,quiet){
+ if(!AI.key){if(!quiet)toast('先に「AI設定」でAPIキーを入力してください');return}
+ const ta=i=>document.querySelector('.cap textarea[data-i="'+i+'"]');
+ const targets=idxs.filter(i=>site.photos[i].img&&!site.photos[i].cap.trim()&&!aiPending.has(site.id+':'+i));
+ if(!targets.length){if(!quiet)toast('対象がありません(説明文が空の画像のみ解析します)');return}
+ targets.forEach(i=>{aiPending.add(site.id+':'+i);const t=ta(i);if(t&&site===cur)t.placeholder='AI解析中…'});
+ let ok=0,ng=0,bad=false;
+ for(const i of targets){
+  const img=site.photos[i].img;
+  try{
+   const cap=await aiDescribe(img),p=site.photos[i];
+   if(cap&&p.img===img&&!p.cap.trim()){p.cap=cap;ok++;const t=ta(i);if(t&&site===cur)t.value=cap}
+  }catch(err){ng++;if(err.status===401||err.status===403){bad=true;break}}
+ }
+ targets.forEach(i=>{aiPending.delete(site.id+':'+i);const t=ta(i);if(t)t.placeholder='画像内容の説明'});
+ if(ok){if(site===cur)save(true);else{site.upd=Date.now();try{await dbPut(site)}catch(_){}}}
+ toast(bad?'APIキーが無効です。AI設定を確認してください':ok?'説明文を'+ok+'件AI入力しました'+(ng?'('+ng+'件は失敗)':''):ng?'AI解析に失敗しました(通信・APIキーを確認)':'');
+}
+function aiAuto(site,idxs){
+ if(!AI.auto||!idxs.length)return;
+ if(!AI.key){if(!aiHinted){aiHinted=true;setTimeout(()=>toast('「AI設定」にAPIキーを入力すると説明文を自動入力できます'),2000)}return}
+ aiFill(site,idxs,true);
+}
+$('#bAi').onclick=()=>aiFill(cur,[0,1,2,3,4,5],false);
+$('#bAiSet').onclick=()=>{$('#aiKey').value=AI.key;$('#aiModel').value=AI.model;$('#aiAuto').checked=AI.auto;$('#aiBg').hidden=false};
+$('#aiClose').onclick=()=>{$('#aiBg').hidden=true};
+$('#aiSave').onclick=()=>{
+ localStorage.setItem('pr_aikey',$('#aiKey').value.trim());
+ localStorage.setItem('pr_aimodel',$('#aiModel').value.trim()||'claude-sonnet-5-5');
+ localStorage.setItem('pr_aiauto',$('#aiAuto').checked?'1':'0');
+ $('#aiBg').hidden=true;toast('AI設定を保存しました');
+};
 
 /* ---------- 起動 ---------- */
 (async()=>{
