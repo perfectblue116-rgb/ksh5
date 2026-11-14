@@ -567,7 +567,7 @@ async function sceneCaption(img){
  const t=r[0],n=r[1];
  if(!t||t.score<0.3||(n&&t.score-n.score<0.08))return '';   /* 自信が低いときは入れない */
  const hit=SCENES.find(x=>x[0]===t.label);
- return hit?hit[1]+'(推定)':'';
+ return hit?hit[1]:'';
 }
 const aiPending=new Set();let aiHinted=false;
 async function aiFill(site,idxs,quiet){
