@@ -99,12 +99,30 @@ div.g{display:grid;grid-template-columns:1fr 1fr}
 .ph .x{position:absolute;top:1.5mm;right:1.5mm;width:9mm;height:9mm;border-radius:50%;border:0;background:rgba(27,42,65,.65);color:#fff;font-size:calc(5mm*var(--fx,1));line-height:9mm;padding:0;display:none;cursor:pointer}
 .ph.has .x{display:block}
 .cap{height:9mm;border-top:.45mm solid #000;padding:.8mm 1.5mm}
-.cap textarea{width:100%;height:100%;resize:none;font-size:calc(3.1mm*var(--fx,1));line-height:1.25}
+.cap{position:relative}
+#sheet .cap textarea{width:100%;height:100%;resize:none;font-size:calc(3.1mm*var(--fx,1));line-height:1.25;padding-right:7mm}
+#sheet .cap .pre{position:absolute;top:1.2mm;right:1.2mm;width:5.5mm;height:6.6mm;display:flex;align-items:center;justify-content:center;font:inherit;font-size:calc(3.4mm*var(--fx,1));line-height:1;color:#1565c0;background:#e3f0ff;border:.2mm solid #9cc7f3;border-radius:1mm;cursor:pointer;padding:0}
+.exporting .pre{display:none!important}
+#sheet.exporting .cap textarea,.exporting #sheet .cap textarea{padding-right:0}
 .miss{background:#ffe3e0!important}
 .exporting .miss{background:transparent!important}
 .exporting .x,.exporting .hint{display:none!important}
 #toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:22px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:40;max-width:90vw}
 #toast.on{opacity:.95}
+#preBg{position:fixed;inset:0;z-index:60;background:rgba(15,27,45,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+#preBg[hidden]{display:none}
+#preBox{width:100%;max-width:380px;max-height:80vh;background:#fff;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+#preHead{display:flex;align-items:center;gap:8px}
+#preHead h3{margin:0;flex:1;font-size:16px;color:var(--ink)}
+#preBox .s{height:36px}
+#preList{overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px}
+#preList button{font-family:inherit;text-align:left;min-height:44px;padding:8px 12px;font-size:15px;font-weight:700;border-radius:10px;border:1.5px solid #dbe6f3;background:#f4f8ff;color:var(--ink);cursor:pointer}
+#preList button.sub{background:#fff;font-weight:600}
+#preList button i{float:right;font-style:normal;color:#1565c0}
+#preList button:active{opacity:.7}
+.prow{display:flex;gap:6px}.prow>button:first-child{flex:1}
+#preList button.pdel{flex:none;width:46px;text-align:center;color:#c62828;background:#fff7f7;border-color:#f1bcbc;padding:0}
+#preList button.padd{background:#fff3d6;color:#8a5a00;border-color:#f2c96b;text-align:center}
 #shareBg{position:fixed;inset:0;z-index:50;background:rgba(15,27,45,.5);display:flex;align-items:center;justify-content:center;padding:20px}
 #shareBg[hidden]{display:none}
 #shareBox{width:100%;max-width:380px;background:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
@@ -112,7 +130,7 @@ div.g{display:grid;grid-template-columns:1fr 1fr}
 #shareBox p{margin:0 0 4px;font-size:12px;color:#5b6b80;word-break:break-all}
 #shareBox .b{height:50px;font-size:15px}
 @page{size:A4;margin:0}
-@media print{#shareBg{display:none!important}}
+@media print{#shareBg,#preBg{display:none!important}.pre{display:none!important}#sheet .cap textarea{padding-right:0!important}}
 @media print{.miss{background:transparent!important}}
 @media print{
  body{background:#fff;padding:0}#top,#toast{display:none!important}
@@ -161,6 +179,7 @@ div.g{display:grid;grid-template-columns:1fr 1fr}
  </div>
  <div class="g" id="grid"></div>
 </div></div></div></div>
+<div id="preBg" hidden><div id="preBox"><div id="preHead"><button class="s" id="preBack" hidden>‹ 戻る</button><h3 id="preTitle">説明文を選択</h3><button class="s" id="preEdit">編集</button><button class="s" id="preClose">閉じる</button></div><div id="preList"></div></div></div>
 <div id="shareBg" hidden><div id="shareBox">
  <h3>PDFを作成しました</h3>
  <p id="shareName"></p>
@@ -185,9 +204,22 @@ const dbPut=o=>tx('readwrite',s=>s.put(o));
 const dbDel=id=>tx('readwrite',s=>s.delete(id));
 
 /* ---------- UI構築 ---------- */
+/* 説明文の定型文(選択して挿入)。増やしたい場合はここに追記 */
+const PRESETS=[
+['全景',['外観全景','内観全景']],
+['基礎工事',['掘削・砕石敷','基礎鉄筋配筋','基礎型枠建込','埋戻し']],
+['コンクリート工事',['捨てコン打設','基礎コン打設','布基礎コン打設','土間コン打設','スラブコン打設']],
+['躯体工事',['木軸建状況','野物・金物付','木工事','鉄骨建方','建入確認','本締','水切り・防湿防水シート張り','サイディング貼','ALC建込','外壁タイル貼','外壁塗装','屋根葺き','アルミサッシ付']],
+['外装工事',[]],
+['内装工事',['軽量下地状況','木額縁付','木建枠付','ボード貼状況','クロスパテ','クロス貼状況','壁タイル貼','床フローリング貼状況','床塩ビシート貼状況','床塩ビタイル貼状況','床タイル貼','床石貼状況']],
+['設備工事',['電気埋設配管状況','設備埋設配管状況','電気内部配線状況','設備内部配管状況','エアコン吊込状況','電気各器具付','設備各器具付']],
+['外構工事',['路盤不陸整正','下層路盤砕石敷込状況','舗装敷設状況','ブロック基礎工事状況','CB積状況','地先ブロック敷設状況','フェンス設置工事']],
+['各社内検査',['支持地盤確認','地耐力確認','コンクリート受入検査','基礎配筋検査','土間配筋検査','スラブ配筋検査','木造建方検査','鉄骨建入検査','鉄骨製品検査','鉄骨UT検査','社内検査']],
+['各外部検査',['瑕疵担保保険検査','中間検査','消防検査','建築検査']]
+];
 const opts='<option value="">－</option>'+Array.from({length:21},(_,i)=>`<option value="${i*5}">${i*5}％</option>`).join('');
 $('#ext').innerHTML=opts;$('#int').innerHTML=opts;
-$('#grid').innerHTML=[0,1,2].map(r=>[0,1].map(c=>{const i=r*2+c;return `<div class="ph" data-i="${i}"><span class="hint"><i>＋</i>タップして画像を挿入</span><img><button class="x" data-i="${i}">×</button></div>`}).join('')+[0,1].map(c=>`<div class="cap"><textarea data-i="${r*2+c}" placeholder="画像内容の説明"></textarea></div>`).join('')).join('');
+$('#grid').innerHTML=[0,1,2].map(r=>[0,1].map(c=>{const i=r*2+c;return `<div class="ph" data-i="${i}"><span class="hint"><i>＋</i>タップして画像を挿入</span><img><button class="x" data-i="${i}">×</button></div>`}).join('')+[0,1].map(c=>`<div class="cap"><textarea data-i="${r*2+c}" placeholder="画像内容の説明"></textarea><button type="button" class="pre" data-i="${r*2+c}" aria-label="定型文を選択">▾</button></div>`).join('')).join('');
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1800)}
 /* ピンチ拡大中は iOS で innerWidth が「拡大後の表示幅」に変わるため使わない。
@@ -233,6 +265,51 @@ async function open_(id){cur=sites.find(s=>s.id===id);localStorage.setItem('pr_l
 const bind=(id,k)=>$('#'+id).addEventListener('input',e=>{cur[k]=e.target.value;save()});
 bind('date','date');bind('title','title');bind('author','author');bind('ext','ext');bind('int','int');bind('note','note');
 document.querySelectorAll('.cap textarea').forEach(t=>t.addEventListener('input',()=>{cur.photos[t.dataset.i].cap=t.value;save()}));
+/* 説明文の定型文メニュー:大項目 → 小項目の2段階選択(直接入力も可能) */
+let preIdx=-1;
+function preSet(v){
+ const i=preIdx;if(i<0||!cur)return;
+ cur.photos[i].cap=v;document.querySelector('.cap textarea[data-i="'+i+'"]').value=v;
+ document.querySelectorAll('.cap .miss').forEach(x=>x.classList.remove('miss'));
+ preHide();save(true);
+}
+function preHide(){$('#preBg').hidden=true;preIdx=-1}
+const PK='pr_presets';
+function pLoad(){try{const o=JSON.parse(localStorage.getItem(PK)||'{}');return{x:o.x||{},m:o.m||[]}}catch(_){return{x:{},m:[]}}}
+function pSave(o){try{localStorage.setItem(PK,JSON.stringify(o))}catch(_){toast('登録に失敗しました')}}
+let preEdit=false,preMaj=null;
+const pBtn=(t,cls,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=t;if(cls)b.className=cls;b.onclick=fn;return b};
+const pRow=(main,del)=>{if(!del||!preEdit)return main;const r=document.createElement('div');r.className='prow';r.appendChild(main);r.appendChild(del);return r};
+const pAsk=lbl=>{const v=(prompt(lbl)||'').trim().slice(0,30);return v};
+function preRender(){preMaj===null?preMajor():preMinor(preMaj)}
+function preMajor(){
+ preMaj=null;$('#preTitle').textContent='項目を選択';$('#preBack').hidden=true;$('#preEdit').textContent=preEdit?'完了':'編集';
+ const U=pLoad(),L=$('#preList');L.innerHTML='';
+ PRESETS.forEach(([m,subs])=>{const b=pBtn(m,'',()=>(subs.length||(U.x[m]||[]).length)?(preMaj=m,preMinor(m)):preSet(m));
+  if(subs.length||(U.x[m]||[]).length){const i=document.createElement('i');i.textContent='›';b.appendChild(i)}L.appendChild(b)});
+ U.m.forEach(([m,subs],k)=>{const b=pBtn(m,'',()=>(preMaj=m,preMinor(m)));const i=document.createElement('i');i.textContent='›';b.appendChild(i);
+  L.appendChild(pRow(b,pBtn('×','pdel',()=>{if(!confirm('大項目「'+m+'」と登録した小項目を削除しますか?'))return;const u=pLoad();u.m.splice(k,1);pSave(u);preMajor()})))});
+ if(preEdit)L.appendChild(pBtn('＋ 大項目を登録','padd',()=>{const v=pAsk('登録する大項目の名前');if(!v)return;const u=pLoad();if(PRESETS.some(x=>x[0]===v)||u.m.some(x=>x[0]===v)){toast('同じ名前があります');return}u.m.push([v,[]]);pSave(u);preMajor()}));
+ L.scrollTop=0;
+}
+function preMinor(m){
+ preMaj=m;$('#preTitle').textContent=m;$('#preBack').hidden=false;$('#preEdit').textContent=preEdit?'完了':'編集';
+ const U=pLoad(),L=$('#preList');L.innerHTML='';
+ const bi=PRESETS.find(x=>x[0]===m),ci=U.m.findIndex(x=>x[0]===m);
+ L.appendChild(pBtn(m+'(大項目のまま入力)','',()=>preSet(m)));
+ (bi?bi[1]:[]).forEach(t=>L.appendChild(pBtn(t,'sub',()=>preSet(t))));
+ const mine=bi?(U.x[m]||[]):(ci>=0?U.m[ci][1]:[]);
+ mine.forEach((t,k)=>L.appendChild(pRow(pBtn(t,'sub',()=>preSet(t)),pBtn('×','pdel',()=>{const u=pLoad();(bi?u.x[m]:u.m[ci][1]).splice(k,1);pSave(u);preMinor(m)}))));
+ if(preEdit)L.appendChild(pBtn('＋ 小項目を登録','padd',()=>{const v=pAsk('「'+m+'」に登録する小項目の名前');if(!v)return;const u=pLoad();
+  const arr=bi?(u.x[m]=u.x[m]||[]):(ci>=0?u.m[ci][1]:null);if(!arr)return;
+  if((bi?bi[1]:[]).includes(v)||arr.includes(v)){toast('同じ名前があります');return}arr.push(v);pSave(u);preMinor(m)}));
+ L.scrollTop=0;
+}
+document.querySelectorAll('.cap .pre').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();preIdx=+b.dataset.i;preEdit=false;preMajor();$('#preBg').hidden=false}));
+$('#preBack').onclick=preMajor;
+$('#preEdit').onclick=()=>{preEdit=!preEdit;preRender()};
+$('#preClose').onclick=preHide;
+$('#preBg').addEventListener('click',e=>{if(e.target.id==='preBg')preHide()});
 document.querySelectorAll('.ph').forEach(p=>p.addEventListener('click',e=>{if(e.target.classList.contains('x'))return;pick=+p.dataset.i;$('#fImg').click()}));
 document.querySelectorAll('.ph .x').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(!confirm('この画像を削除しますか?'))return;cur.photos[b.dataset.i].img='';render();save(true)}));
 
