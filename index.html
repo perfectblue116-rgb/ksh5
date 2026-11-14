@@ -264,12 +264,12 @@ async function open_(id){cur=sites.find(s=>s.id===id);localStorage.setItem('pr_l
 /* ---------- 入力イベント ---------- */
 const bind=(id,k)=>$('#'+id).addEventListener('input',e=>{cur[k]=e.target.value;save()});
 bind('date','date');bind('title','title');bind('author','author');bind('ext','ext');bind('int','int');bind('note','note');
-document.querySelectorAll('.cap textarea').forEach(t=>t.addEventListener('input',()=>{cur.photos[t.dataset.i].cap=t.value;save()}));
+document.querySelectorAll('.cap textarea').forEach(t=>t.addEventListener('input',()=>{cur.photos[t.dataset.i].cap=t.value;cur.photos[t.dataset.i].auto=false;save()}));
 /* 説明文の定型文メニュー:大項目 → 小項目の2段階選択(直接入力も可能) */
 let preIdx=-1;
 function preSet(v){
  const i=preIdx;if(i<0||!cur)return;
- cur.photos[i].cap=v;document.querySelector('.cap textarea[data-i="'+i+'"]').value=v;
+ cur.photos[i].cap=v;cur.photos[i].auto=false;document.querySelector('.cap textarea[data-i="'+i+'"]').value=v;
  document.querySelectorAll('.cap .miss').forEach(x=>x.classList.remove('miss'));
  preHide();save(true);
 }
@@ -318,7 +318,7 @@ function shrink(src,max,q){return new Promise((res,rej)=>{const im=new Image();i
 $('#fImg').addEventListener('change',async e=>{
  const f=e.target.files[0];e.target.value='';if(!f)return;
  const u=URL.createObjectURL(f);
- let ok=false;try{cur.photos[pick].img=await shrink(u,1280,0.8);HI.set(cur.photos[pick],f);render();save(true);ok=true}catch(err){toast('画像を読み込めませんでした')}
+ let ok=false;try{cur.photos[pick].img=await shrink(u,1280,0.8);HI.set(cur.photos[pick],f);if(cur.photos[pick].auto!==false)cur.photos[pick].cap='';render();save(true);ok=true}catch(err){toast('画像を読み込めませんでした')}
  URL.revokeObjectURL(u);
  if(ok)aiAuto(cur,[pick]);
 });
@@ -421,7 +421,7 @@ $('#fBulk').addEventListener('change',async e=>{
  const fs=Array.from(e.target.files);/* ファイル名で並べ替えず、選択した順(ブラウザが返した順)のまま挿入 */e.target.value='';
  if(!fs.length)return;toast('画像を処理中…');let n=0;const site=cur,ins=[];
  for(const f of fs){const i=cur.photos.findIndex(p=>!p.img);if(i<0)break;const u=URL.createObjectURL(f);
-  try{cur.photos[i].img=await shrink(u,1280,0.8);HI.set(cur.photos[i],f);n++;ins.push(i)}catch(_){}URL.revokeObjectURL(u)}
+  try{cur.photos[i].img=await shrink(u,1280,0.8);HI.set(cur.photos[i],f);if(cur.photos[i].auto!==false)cur.photos[i].cap='';n++;ins.push(i)}catch(_){}URL.revokeObjectURL(u)}
  render();save(true);
  toast(n+'枚を挿入しました'+(n<fs.length?'(空き枠不足で'+(fs.length-n)+'枚は未挿入)':''));
  aiAuto(site,ins);
@@ -675,7 +675,7 @@ async function aiFill(site,idxs,quiet){
    let cap=await ocrCaption(HI.get(site.photos[i])||img);const p=site.photos[i];HI.delete(p);
    if(!cap&&SC.auto){if(!scP)toast('写真の状況を推定中…(初回はモデル取得に時間がかかります)');try{cap=await sceneCaption(img);if(cap)est++}catch(e){console.error(e)}}
    if(!cap)none++;
-   else if(p.img===img&&!p.cap.trim()){p.cap=cap;ok++;const t=ta(i);if(t&&site===cur)t.value=cap}
+   else if(p.img===img&&!p.cap.trim()){p.cap=cap;p.auto=true;ok++;const t=ta(i);if(t&&site===cur)t.value=cap}
   }catch(err){console.error(err);ng++;if(!ocrP)break}
  }
  targets.forEach(i=>{aiPending.delete(site.id+':'+i);const t=ta(i);if(t)t.placeholder='画像内容の説明'});
