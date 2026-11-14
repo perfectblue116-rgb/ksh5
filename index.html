@@ -190,10 +190,20 @@ $('#ext').innerHTML=opts;$('#int').innerHTML=opts;
 $('#grid').innerHTML=[0,1,2].map(r=>[0,1].map(c=>{const i=r*2+c;return `<div class="ph" data-i="${i}"><span class="hint"><i>＋</i>タップして画像を挿入</span><img><button class="x" data-i="${i}">×</button></div>`}).join('')+[0,1].map(c=>`<div class="cap"><textarea data-i="${r*2+c}" placeholder="画像内容の説明"></textarea></div>`).join('')).join('');
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1800)}
-function fit(){const st=$('#stage'),fb=$('#fitbox');st.style.transform='none';const w=st.offsetWidth,h=st.offsetHeight,k=Math.min(1,(innerWidth-16)/w);st.style.transform='scale('+k+')';fb.style.width=w*k+'px';fb.style.height=h*k+'px';fixText()}
+/* ピンチ拡大中は iOS で innerWidth が「拡大後の表示幅」に変わるため使わない。
+   ズームの影響を受けないレイアウト幅(clientWidth)だけを基準にする */
+function layoutW(){const c=document.documentElement.clientWidth;return c>0?c:innerWidth}
+let lastFitW=0;
+function fit(force){const lw=layoutW();if(!force&&lw===lastFitW)return;lastFitW=lw;const st=$('#stage'),fb=$('#fitbox');st.style.transform='none';const w=st.offsetWidth,h=st.offsetHeight,k=Math.min(1,(lw-16)/w);st.style.transform='scale('+k+')';fb.style.width=w*k+'px';fb.style.height=h*k+'px';fixText()}
 function fixText(){const sh=$('#sheet'),st=$('#stage');sh.style.setProperty('--fx',1);const pr=document.createElement('span');pr.textContent='あああああああああああ';pr.style.cssText='position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap;font-size:20px';sh.appendChild(pr);const k=st.getBoundingClientRect().width/st.offsetWidth,f=pr.getBoundingClientRect().width/(220*k);pr.remove();if(isFinite(f)&&f>0&&(f>1.08||f<.92))sh.style.setProperty('--fx',(1/f).toFixed(3))}
-addEventListener('load',()=>fit());
-addEventListener('resize',fit);
+addEventListener('load',()=>fit(true));
+/* リサイズは間引き、レイアウト幅が実際に変わったときだけ再計算(ピンチ操作では再計算しない) */
+let fitT;const fitSoon=()=>{clearTimeout(fitT);fitT=setTimeout(()=>fit(),120)};
+addEventListener('resize',fitSoon);
+addEventListener('orientationchange',()=>setTimeout(()=>fit(true),300));
+addEventListener('pageshow',()=>fit(true));
+/* 念のための自己修復:ズームが等倍に戻った時に、表示サイズがずれていたら再フィット */
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(()=>{if(Math.abs(visualViewport.scale-1)<.02)fit(true)},200)});
 
 function render(){
  $('#date').value=cur.date;$('#title').value=cur.title;$('#author').value=cur.author;
@@ -610,7 +620,7 @@ $('#bAiSet').onclick=()=>{localStorage.setItem('pr_ocrauto',OCR.auto?'0':'1');se
  const last=localStorage.getItem('pr_last');
  sites.sort((a,b)=>b.upd-a.upd);
  await open_((sites.find(s=>s.id===last)||sites[0]).id);
- $('#msg').textContent='前回の続きから開きました：'+(cur.title||'無題');fit();usage();
+ $('#msg').textContent='前回の続きから開きました：'+(cur.title||'無題');fit(true);usage();
 })();
 </script>
 </body>
